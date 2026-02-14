@@ -75,7 +75,7 @@ export default function GuestsAdmin() {
     setIsLoading(true)
     try {
       const { data, error, count } = await supabase
-        .from("guests_with_club_names")
+        .from("xc_guests_with_club_names")
         .select("*", { count: "exact" })
         .order("created_at", { ascending: false })
         .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
@@ -98,7 +98,7 @@ export default function GuestsAdmin() {
       const weekEnd = format(endOfWeek(currentWeekStart), "yyyy-MM-dd")
 
       const { data, error } = await supabase
-        .from("guests_with_club_names")
+        .from("xc_guests_with_club_names")
         .select("*")
         .gte("created_at", weekStart)
         .lt("created_at", weekEnd)

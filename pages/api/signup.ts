@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { data, error } = await supabase
-      .from("guests")
+      .from("xc_guests")
       .insert({
         first_name: firstName,
         last_name: lastName,

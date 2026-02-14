@@ -65,7 +65,7 @@ export default function ClubsAdmin() {
       } = await supabase.auth.getSession()
       if (!session) return
 
-      const { data, error } = await supabase.from("clubs").select("*").order("name")
+      const { data, error } = await supabase.from("xc_clubs").select("*").order("name")
 
       if (error) throw error
       setClubs(data || [])
@@ -103,7 +103,7 @@ export default function ClubsAdmin() {
 
       if (editingClub) {
         const { error } = await supabase
-          .from("clubs")
+          .from("xc_clubs")
           .update({
             name: formData.name,
             address: formData.address,
@@ -113,7 +113,7 @@ export default function ClubsAdmin() {
 
         if (error) throw error
       } else {
-        const { error } = await supabase.from("clubs").insert([
+        const { error } = await supabase.from("xc_clubs").insert([
           {
             name: formData.name,
             address: formData.address,
@@ -153,7 +153,7 @@ export default function ClubsAdmin() {
         throw new Error("Not authenticated")
       }
 
-      const { error } = await supabase.from("clubs").delete().eq("id", deletingClub.id)
+      const { error } = await supabase.from("xc_clubs").delete().eq("id", deletingClub.id)
 
       if (error) throw error
       fetchClubs()

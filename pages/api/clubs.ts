@@ -41,7 +41,7 @@ export default async function handler(
 
     // Query Supabase
     const { data: clubs, error } = await supabase
-      .from("clubs")
+      .from("xc_clubs")
       .select("*")
       .contains("available_dates", [dayName]);
 

@@ -69,7 +69,7 @@ export default function SignUpPage() {
 
     try {
       const { data: clubs, error } = await supabase
-        .from("clubs")
+        .from("xc_clubs")
         .select("*")
         .contains("available_dates", [dayName]);
       if (error) {
@@ -110,7 +110,7 @@ export default function SignUpPage() {
 
     try {
       const { data, error } = await supabase
-        .from("guests")
+        .from("xc_guests")
         .insert({
           first_name: formData.firstName,
           last_name: formData.lastName,

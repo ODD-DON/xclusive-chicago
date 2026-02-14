@@ -61,7 +61,8 @@
     "@supabase/supabase-js": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
     "react-csv": "latest",
-    "@supabase/ssr": "latest"
+    "@supabase/ssr": "latest",
+    "react-qr-code": "^2.0.15"
   },
   "devDependencies": {
     "@types/node": "^22",

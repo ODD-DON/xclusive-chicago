@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query
 
   try {
-    const { data: guest, error: guestError } = await supabase.from("guests").select("*, clubs(*)").eq("id", id).single()
+    const { data: guest, error: guestError } = await supabase.from("xc_guests").select("*, xc_clubs(*)").eq("id", id).single()
 
     if (guestError) throw guestError
 

@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // First, get the guest by voucher code
     const { data: guest, error: fetchError } = await supabase
-      .from("guests")
+      .from("xc_guests")
       .select("*")
       .eq("voucher_code", voucherCode)
       .single()
@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Update the guest's check-in status
     const { data, error: updateError } = await supabase
-      .from("guests")
+      .from("xc_guests")
       .update({ checked_in: true, check_in_time: new Date().toISOString() })
       .eq("id", guest.id)
       .select()

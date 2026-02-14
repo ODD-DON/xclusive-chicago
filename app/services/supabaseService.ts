@@ -32,7 +32,7 @@ export const addGuest = async (
   const voucherCode = generateVoucherCode()
 
   const { data, error } = await supabase
-    .from("guests")
+    .from("xc_guests")
     .insert({
       first_name: guestData.firstName,
       last_name: guestData.lastName,
@@ -62,7 +62,7 @@ export const addGuest = async (
 export const getGuestById = async (id: string): Promise<Guest | null> => {
   try {
     const { data: guestData, error: guestError } = await supabase
-      .from("guests_with_club_names")
+      .from("xc_guests_with_club_names")
       .select("*")
       .eq("id", id)
       .single()
@@ -81,7 +81,7 @@ export const getGuestById = async (id: string): Promise<Guest | null> => {
 
     // Fetch club details
     const { data: clubData, error: clubError } = await supabase
-      .from("clubs")
+      .from("xc_clubs")
       .select("*")
       .eq("id", guestData.club_id)
       .single()
@@ -103,7 +103,7 @@ export const getGuestById = async (id: string): Promise<Guest | null> => {
 export const getGuestByVoucherCode = async (voucherCode: string): Promise<Guest | null> => {
   try {
     const { data: guestData, error: guestError } = await supabase
-      .from("guests_with_club_names")
+      .from("xc_guests_with_club_names")
       .select("*")
       .eq("voucher_code", voucherCode)
       .single()
@@ -122,7 +122,7 @@ export const getGuestByVoucherCode = async (voucherCode: string): Promise<Guest 
 
     // Fetch club details
     const { data: clubData, error: clubError } = await supabase
-      .from("clubs")
+      .from("xc_clubs")
       .select("*")
       .eq("id", guestData.club_id)
       .single()
@@ -143,7 +143,7 @@ export const getGuestByVoucherCode = async (voucherCode: string): Promise<Guest 
 
 export const updateGuestCheckIn = async (guestId: string): Promise<boolean> => {
   const { error } = await supabase
-    .from("guests")
+    .from("xc_guests")
     .update({ checked_in: true, check_in_time: new Date().toISOString() })
     .eq("id", guestId)
 
@@ -157,7 +157,7 @@ export const updateGuestCheckIn = async (guestId: string): Promise<boolean> => {
 
 export const getClubsByDate = async (fullDate: string): Promise<Club[]> => {
   const dayName = fullDate.split(" ")[0]
-  const { data, error } = await supabase.from("clubs").select("*").contains("available_dates", [dayName])
+  const { data, error } = await supabase.from("xc_clubs").select("*").contains("available_dates", [dayName])
 
   if (error) {
     console.error("Error fetching clubs:", error)

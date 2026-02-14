@@ -9,7 +9,7 @@ export default function TestSupabase() {
   useEffect(() => {
     async function testConnection() {
       try {
-        const { data, error } = await supabase.from("guests").select("*").limit(1)
+        const { data, error } = await supabase.from("xc_guests").select("*").limit(1)
 
         if (error) {
           throw error

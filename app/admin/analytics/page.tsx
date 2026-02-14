@@ -52,14 +52,14 @@ export default function AnalyticsPage() {
       const weekEnd = endOfWeek(currentDate)
 
       const { data: guests, error: guestsError } = await supabase
-        .from("guests")
+        .from("xc_guests")
         .select("*")
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
 
       if (guestsError) throw guestsError
 
-      const { data: clubs, error: clubsError } = await supabase.from("clubs").select("id, name")
+      const { data: clubs, error: clubsError } = await supabase.from("xc_clubs").select("id, name")
 
       if (clubsError) throw clubsError
 

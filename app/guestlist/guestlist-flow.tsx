@@ -131,6 +131,13 @@ export function EventFeed({ events }: EventFeedProps) {
                       )}
                     </div>
 
+                    {event.cutoff_time && (
+                      <div className="flex items-center gap-1.5 text-sm text-gold">
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
+                        <span>Free entry before {formatTime(event.cutoff_time)} with this link</span>
+                      </div>
+                    )}
+
                     {event.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                     )}
@@ -144,14 +151,23 @@ export function EventFeed({ events }: EventFeedProps) {
                           </a>
                         </Button>
                       ) : null}
-                      <Button
-                        variant="outline"
-                        className="flex-1 border-gold/30 text-gold hover:bg-gold/10"
-                        onClick={() => setVipEvent(event)}
-                      >
-                        <Wine className="w-4 h-4 mr-2" />
-                        Bottle Service
-                      </Button>
+                      {event.tables_url ? (
+                        <Button asChild variant="outline" className="flex-1 border-gold/30 text-gold hover:bg-gold/10">
+                          <a href={event.tables_url} target="_blank" rel="noreferrer">
+                            <Wine className="w-4 h-4 mr-2" />
+                            Bottle Service
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-gold/30 text-gold hover:bg-gold/10"
+                          onClick={() => setVipEvent(event)}
+                        >
+                          <Wine className="w-4 h-4 mr-2" />
+                          Bottle Service
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </motion.div>

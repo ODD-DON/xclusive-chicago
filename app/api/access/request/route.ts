@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
       lastName,
       phone,
       email,
+      instagram,
       guestCount,
       smsConsent,
       emailConsent,
@@ -22,8 +23,12 @@ export async function POST(request: NextRequest) {
       interestPartyBus,
     } = body
 
-    if (!eventId || !firstName || !lastName || !phone) {
+    if (!eventId || !firstName || !lastName || !phone || !instagram) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!smsConsent) {
+      return NextResponse.json({ error: 'SMS consent is required to request access' }, { status: 400 })
     }
 
     const cleanPhone = String(phone).replace(/\D/g, '')
@@ -57,6 +62,7 @@ export async function POST(request: NextRequest) {
           last_name: String(lastName).trim(),
           phone: cleanPhone,
           email: email || null,
+          instagram: String(instagram).trim().replace(/^@/, ''),
           sms_consent: !!smsConsent,
           email_consent: !!emailConsent,
           source: 'event_request',

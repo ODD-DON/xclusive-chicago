@@ -164,6 +164,7 @@ export function AccessContent({ accessRequests: initialRequests, members }: Acce
                     <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
                       <span>{formatPhone(member.phone)}</span>
                       {member.email && <span>{member.email}</span>}
+                      {member.instagram && <span>@{member.instagram.replace(/^@/, '')}</span>}
                     </div>
                   </div>
                   <div className="text-right text-xs text-muted-foreground shrink-0">

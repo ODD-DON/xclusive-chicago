@@ -372,6 +372,12 @@ function JoinListSection() {
                 <Checkbox checked={emailConsent} onCheckedChange={(v) => setEmailConsent(!!v)} className="mt-0.5" />
                 <span>Email me about future Xclusive releases and access updates.</span>
               </label>
+              <p className="text-[11px] text-muted-foreground/70">
+                Msg &amp; data rates may apply. Msg frequency varies. Reply STOP to opt out.{' '}
+                <Link href="/privacy" target="_blank" className="text-gold hover:underline">Privacy Policy</Link>
+                {' | '}
+                <Link href="/terms-and-conditions" target="_blank" className="text-gold hover:underline">Terms</Link>
+              </p>
             </div>
             <Button
               type="submit"

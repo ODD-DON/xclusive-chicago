@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, MessageSquare, Mail } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -241,6 +241,7 @@ function RequestAccessDialog({
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
+  const [instagram, setInstagram] = useState('')
   const [guestCount, setGuestCount] = useState('1')
   const [smsConsent, setSmsConsent] = useState(false)
   const [emailConsent, setEmailConsent] = useState(false)
@@ -261,6 +262,7 @@ function RequestAccessDialog({
     setLastName('')
     setPhone('')
     setEmail('')
+    setInstagram('')
     setGuestCount('1')
     setSmsConsent(false)
     setEmailConsent(false)
@@ -287,13 +289,23 @@ function RequestAccessDialog({
 
   const canContinue = () => {
     if (step === 0) return !!firstName.trim() && !!lastName.trim()
-    if (step === 1) return !!phone.replace(/\D/g, '').match(/^\d{10,}$/)
+    if (step === 1) return !!phone.replace(/\D/g, '').match(/^\d{10,}$/) && !!instagram.trim() && smsConsent
     return true
   }
 
   const goNext = () => {
     if (!canContinue()) {
-      toast.error(step === 0 ? 'Tell us your name' : 'Enter a valid phone number')
+      if (step === 0) {
+        toast.error('Tell us your name')
+      } else if (step === 1) {
+        toast.error(
+          !phone.replace(/\D/g, '').match(/^\d{10,}$/)
+            ? 'Enter a valid phone number'
+            : !instagram.trim()
+              ? 'Enter your Instagram handle'
+              : 'Please agree to receive SMS updates to continue',
+        )
+      }
       return
     }
     setDirection(1)
@@ -319,6 +331,7 @@ function RequestAccessDialog({
           lastName: lastName.trim(),
           phone,
           email: email.trim() || null,
+          instagram: instagram.trim().replace(/^@/, ''),
           guestCount: parseInt(guestCount, 10),
           smsConsent,
           emailConsent,
@@ -459,6 +472,48 @@ function RequestAccessDialog({
                     <Label>Email (optional)</Label>
                     <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted border-border/50" />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Instagram</Label>
+                    <Input
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value)}
+                      placeholder="@yourhandle"
+                      className="bg-muted border-border/50"
+                    />
+                  </div>
+
+                  <label className="flex items-start gap-3 cursor-pointer group p-3 -mx-3 rounded-lg hover:bg-muted/30 active:bg-muted/50 transition-colors">
+                    <div className="relative flex items-center justify-center mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={smsConsent}
+                        onChange={(e) => setSmsConsent(e.target.checked)}
+                        className="peer sr-only"
+                      />
+                      <div className="w-5 h-5 rounded-md border-2 border-border bg-card peer-checked:bg-gold peer-checked:border-gold transition-all flex items-center justify-center shrink-0">
+                        {smsConsent && (
+                          <svg className="w-3.5 h-3.5 text-background" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm text-foreground leading-snug flex-1">
+                      I agree to receive SMS updates from Xclusive Chicago
+                    </span>
+                  </label>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    By submitting your phone number, you agree to receive SMS messages from Xclusive Chicago
+                    related to your access request, confirmations, and event updates. Message frequency may vary.
+                    Message &amp; data rates may apply. Reply STOP to opt out.
+                  </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    <Link href="/privacy" target="_blank" className="text-gold hover:underline">Privacy Policy</Link>
+                    {' | '}
+                    <Link href="/terms-and-conditions" target="_blank" className="text-gold hover:underline">Terms &amp; Conditions</Link>
+                  </p>
                 </>
               )}
 
@@ -527,9 +582,8 @@ function RequestAccessDialog({
 
               {step === 4 && (
                 <>
-                  <StepHeading title="Stay in the loop?" subtitle="First access to future drops. Optional." />
+                  <StepHeading title="Stay in the loop?" subtitle="First access to future drops by email. Optional." />
                   <div className="grid grid-cols-2 gap-2">
-                    <UpsellChip icon={MessageSquare} label="Text Updates" active={smsConsent} onClick={() => setSmsConsent((v) => !v)} />
                     <UpsellChip icon={Mail} label="Email Updates" active={emailConsent} onClick={() => setEmailConsent((v) => !v)} />
                   </div>
                 </>

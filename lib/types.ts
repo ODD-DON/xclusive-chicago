@@ -95,6 +95,7 @@ export interface Member {
   last_name: string
   phone: string
   email: string | null
+  instagram: string | null
   sms_consent: boolean
   email_consent: boolean
   source: string | null

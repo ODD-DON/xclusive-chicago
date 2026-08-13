@@ -27,7 +27,24 @@ async function getVipRequests() {
   return data || []
 }
 
+async function getVipInquiries() {
+  const supabase = createServiceClient()
+
+  const { data, error } = await supabase
+    .from('xc_vip_inquiries')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching VIP inquiries:', error)
+    return []
+  }
+
+  return data || []
+}
+
 export default async function VipPage() {
-  const requests = await getVipRequests()
-  return <VipContent requests={requests} />
+  const [requests, inquiries] = await Promise.all([getVipRequests(), getVipInquiries()])
+  return <VipContent requests={requests} inquiries={inquiries} />
 }

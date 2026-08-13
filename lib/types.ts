@@ -191,6 +191,24 @@ export interface VipRequest {
   created_at: string
 }
 
+export interface VipInquiry {
+  id: string
+  app_id: string
+  first_name: string
+  last_name: string
+  phone: string
+  email: string | null
+  instagram: string | null
+  target_date: string | null
+  party_size: number | null
+  budget: string | null
+  venue_preference: string | null
+  out_of_town: boolean
+  notes: string | null
+  status: string
+  created_at: string
+}
+
 export interface Venue {
   id: string
   name: string

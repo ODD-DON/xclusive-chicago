@@ -8,7 +8,6 @@ import {
   Plus,
   Building2,
   MapPin,
-  Clock,
   MoreVertical,
   Pencil,
   Trash2,
@@ -44,8 +43,6 @@ interface ClubsContentProps {
   initialClubs: Club[]
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 const SIZE_LABELS: Record<ClubSize, { label: string; capacity: string }> = {
   intimate: { label: 'Intimate', capacity: '< 200' },
   medium: { label: 'Medium', capacity: '200-500' },
@@ -66,12 +63,6 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
     name: '',
     address: '',
     description: '',
-    lat: '',
-    lng: '',
-    geofenceMiles: '0.5',
-    defaultUnlockTime: '21:00',
-    defaultCutoffTime: '23:30',
-    recurringDays: [] as number[],
     imageUrl: '' as string,
     size: 'medium' as ClubSize,
     musicStyles: [] as MusicStyle[],
@@ -82,12 +73,6 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
       name: '',
       address: '',
       description: '',
-      lat: '',
-      lng: '',
-      geofenceMiles: '0.5',
-      defaultUnlockTime: '21:00',
-      defaultCutoffTime: '23:30',
-      recurringDays: [],
       imageUrl: '',
       size: 'medium',
       musicStyles: [],
@@ -106,26 +91,11 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
       name: club.name,
       address: club.address || '',
       description: club.description || '',
-      lat: club.lat?.toString() || '',
-      lng: club.lng?.toString() || '',
-      geofenceMiles: club.geofence_miles?.toString() || '0.5',
-      defaultUnlockTime: club.default_unlock_time?.substring(0, 5) || '21:00',
-      defaultCutoffTime: club.default_cutoff_time?.substring(0, 5) || '23:30',
-      recurringDays: club.recurring_days || [],
       imageUrl: club.image_url || '',
       size: club.size || 'medium',
       musicStyles: (club.music_styles as MusicStyle[]) || [],
     })
     setIsDialogOpen(true)
-  }
-
-  const toggleDay = (day: number) => {
-    setForm((prev) => ({
-      ...prev,
-      recurringDays: prev.recurringDays.includes(day)
-        ? prev.recurringDays.filter((d) => d !== day)
-        : [...prev.recurringDays, day].sort(),
-    }))
   }
 
   const toggleMusicStyle = (style: MusicStyle) => {
@@ -189,12 +159,6 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
           name: form.name.trim(),
           address: form.address.trim() || null,
           description: form.description.trim() || null,
-          lat: form.lat ? parseFloat(form.lat) : null,
-          lng: form.lng ? parseFloat(form.lng) : null,
-          geofence_miles: parseFloat(form.geofenceMiles) || 0.5,
-          default_unlock_time: form.defaultUnlockTime + ':00',
-          default_cutoff_time: form.defaultCutoffTime + ':00',
-          recurring_days: form.recurringDays,
           image_url: form.imageUrl || null,
           size: form.size,
           music_styles: form.musicStyles,
@@ -343,12 +307,6 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
                                 <span>{SIZE_LABELS[club.size].label} ({SIZE_LABELS[club.size].capacity})</span>
                               </div>
                             )}
-                            {club.default_cutoff_time && (
-                              <div className="flex items-center gap-1.5 text-muted-foreground">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>Cutoff: {formatTime(club.default_cutoff_time)}</span>
-                              </div>
-                            )}
                           </div>
 
                           <div className="flex flex-wrap gap-2">
@@ -360,22 +318,6 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
                                 {style}
                               </span>
                             ))}
-                            {club.recurring_days && club.recurring_days.length > 0 && (
-                              <div className="flex items-center gap-1 ml-auto">
-                                {DAYS.map((day, idx) => (
-                                  <span
-                                    key={day}
-                                    className={`w-6 h-6 rounded-full text-xs flex items-center justify-center ${
-                                      club.recurring_days?.includes(idx)
-                                        ? 'bg-gold/20 text-gold'
-                                        : 'bg-muted text-muted-foreground/50'
-                                    }`}
-                                  >
-                                    {day[0]}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
 
@@ -549,80 +491,6 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="lat">Latitude</Label>
-                <Input
-                  id="lat"
-                  type="number"
-                  step="any"
-                  value={form.lat}
-                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
-                  placeholder="41.8781"
-                  className="bg-muted border-border/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lng">Longitude</Label>
-                <Input
-                  id="lng"
-                  type="number"
-                  step="any"
-                  value={form.lng}
-                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
-                  placeholder="-87.6298"
-                  className="bg-muted border-border/50"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="unlockTime">Unlock Time</Label>
-                <Input
-                  id="unlockTime"
-                  type="time"
-                  value={form.defaultUnlockTime}
-                  onChange={(e) =>
-                    setForm({ ...form, defaultUnlockTime: e.target.value })
-                  }
-                  className="bg-muted border-border/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cutoffTime">Cutoff Time</Label>
-                <Input
-                  id="cutoffTime"
-                  type="time"
-                  value={form.defaultCutoffTime}
-                  onChange={(e) =>
-                    setForm({ ...form, defaultCutoffTime: e.target.value })
-                  }
-                  className="bg-muted border-border/50"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Recurring Days</Label>
-              <div className="flex gap-2">
-                {DAYS.map((day, idx) => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleDay(idx)}
-                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                      form.recurringDays.includes(idx)
-                        ? 'bg-gold text-background'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -651,11 +519,4 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
       </Dialog>
     </div>
   )
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':').map(Number)
-  const ampm = hours >= 12 ? 'PM' : 'AM'
-  const hour12 = hours % 12 || 12
-  return `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`
 }

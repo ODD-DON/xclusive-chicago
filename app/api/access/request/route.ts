@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       celebrationType,
       celebrationOther,
       bottleServiceInterest,
+      bottleBudget,
       interestBoat,
       interestPartyBus,
     } = body
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
         name: `${String(firstName).trim()} ${String(lastName).trim()}`,
         phone: cleanPhone,
         group_size: guestCount || 1,
-        budget: null,
+        budget: bottleBudget || null,
         notes: 'Submitted via Request Access bottle service upsell',
       })
     }

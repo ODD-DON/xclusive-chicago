@@ -238,9 +238,11 @@ function RequestAccessDialog({
   const [celebrationType, setCelebrationType] = useState('')
   const [celebrationOther, setCelebrationOther] = useState('')
   const [bottleServiceInterest, setBottleServiceInterest] = useState(false)
+  const [bottleBudget, setBottleBudget] = useState('')
   const [interestBoat, setInterestBoat] = useState(false)
   const [interestPartyBus, setInterestPartyBus] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const bottleMenuUrls = event?.club?.bottle_menu_urls || []
   const totalSteps = 5
@@ -259,6 +261,7 @@ function RequestAccessDialog({
     setCelebrationType('')
     setCelebrationOther('')
     setBottleServiceInterest(false)
+    setBottleBudget('')
     setInterestBoat(false)
     setInterestPartyBus(false)
   }
@@ -328,6 +331,7 @@ function RequestAccessDialog({
           celebrationType: celebrationType || null,
           celebrationOther: celebrationType === 'Other' ? celebrationOther.trim() || null : null,
           bottleServiceInterest,
+          bottleBudget: bottleServiceInterest ? bottleBudget || null : null,
           interestBoat,
           interestPartyBus,
         }),
@@ -510,13 +514,13 @@ function RequestAccessDialog({
               {step === 2 && (
                 <>
                   <StepHeading title="Anything to celebrate?" subtitle="Optional, but it helps us take care of you." />
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {CELEBRATION_TYPES.map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => setCelebrationType((c) => (c === type ? '' : type))}
-                        className={`px-3.5 py-2 rounded-full text-sm border transition-colors ${
+                        className={`px-3 py-2.5 rounded-lg text-sm border text-center transition-colors ${
                           celebrationType === type
                             ? 'border-gold bg-gold/10 text-gold'
                             : 'border-border/50 text-muted-foreground hover:border-gold/30'
@@ -557,12 +561,40 @@ function RequestAccessDialog({
                   </div>
                   {bottleServiceInterest && bottleMenuUrls.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">Bottle service menu for {event?.club?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Bottle service menu for {event?.club?.name} &middot; tap to view
+                      </p>
                       <div className="flex gap-2 overflow-x-auto pb-1">
                         {bottleMenuUrls.map((url) => (
-                          <div key={url} className="relative w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-muted">
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setLightboxUrl(url)}
+                            className="relative w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-muted cursor-pointer"
+                          >
                             <Image src={url} alt="Bottle service menu" fill className="object-cover" />
-                          </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {bottleServiceInterest && (
+                    <div className="space-y-2">
+                      <Label>Budget for bottle service (optional)</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['$300-500', '$500-1000', '$1000-2000', '$2000+'].map((range) => (
+                          <button
+                            key={range}
+                            type="button"
+                            onClick={() => setBottleBudget((b) => (b === range ? '' : range))}
+                            className={`px-3 py-2.5 rounded-lg text-sm border text-center transition-colors ${
+                              bottleBudget === range
+                                ? 'border-gold bg-gold/10 text-gold'
+                                : 'border-border/50 text-muted-foreground hover:border-gold/30'
+                            }`}
+                          >
+                            {range}
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -604,6 +636,17 @@ function RequestAccessDialog({
           )}
         </div>
       </DialogContent>
+
+      <Dialog open={!!lightboxUrl} onOpenChange={(open) => !open && setLightboxUrl(null)}>
+        <DialogContent className="max-w-lg p-2 bg-transparent border-none shadow-none" showCloseButton={false}>
+          <DialogTitle className="sr-only">Bottle service menu</DialogTitle>
+          {lightboxUrl && (
+            <button type="button" onClick={() => setLightboxUrl(null)} className="relative w-full aspect-square">
+              <Image src={lightboxUrl} alt="Bottle service menu" fill className="object-contain rounded-lg" />
+            </button>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

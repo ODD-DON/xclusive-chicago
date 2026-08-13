@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
+import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,6 +50,21 @@ export async function POST(request: NextRequest) {
       console.error('VIP inquiry error:', error)
       return NextResponse.json({ error: 'Failed to submit your inquiry' }, { status: 500 })
     }
+
+    const details = [
+      partySize ? `${partySize} people` : null,
+      budget || null,
+      targetDate ? `for ${targetDate}` : null,
+      outOfTown ? 'out of town' : null,
+    ].filter(Boolean)
+
+    await sendAdminPush({
+      title: 'New VIP Table Inquiry',
+      body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)}${
+        details.length ? ` · ${details.join(', ')}` : ''
+      }`,
+      url: '/admin/vip',
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

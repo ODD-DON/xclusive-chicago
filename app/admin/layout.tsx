@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { PushNotificationsButton } from '@/components/push-notifications-button'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -126,6 +127,9 @@ export default function AdminLayout({
                   <LogOut className="w-5 h-5" />
                   <span>Log out</span>
                 </button>
+                <div className="px-4 py-3">
+                  <PushNotificationsButton />
+                </div>
               </nav>
             </motion.aside>
           </>
@@ -176,6 +180,7 @@ export default function AdminLayout({
               <LogOut className="w-4 h-4" />
               Log out
             </button>
+            <PushNotificationsButton />
           </div>
         </aside>
 

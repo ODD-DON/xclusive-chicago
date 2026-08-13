@@ -13,9 +13,15 @@ export const metadata: Metadata = {
   title: 'XCLUSIVE Chicago | Premium Guest List',
   description: 'Skip the line. Join the exclusive guest list for Chicago\'s hottest nightclubs.',
   generator: 'v0.app',
+  manifest: '/manifest.json',
   icons: {
     icon: '/logo.png',
-    apple: '/logo.png',
+    apple: '/apple-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'XC Admin',
   },
   openGraph: {
     title: 'XCLUSIVE Chicago | Premium Guest List',

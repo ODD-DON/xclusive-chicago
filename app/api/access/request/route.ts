@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { nanoid } from 'nanoid'
+import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const { data: event, error: eventError } = await supabase
       .from('xc_events')
-      .select('id, allocation, approval_mode, waitlist_enabled, is_active')
+      .select('id, title, allocation, approval_mode, waitlist_enabled, is_active, club:xc_clubs(name)')
       .eq('id', eventId)
       .single()
 
@@ -143,6 +144,21 @@ export async function POST(request: NextRequest) {
         group_size: guestCount || 1,
         budget: bottleBudget || null,
         notes: 'Submitted via Request Access bottle service upsell',
+      })
+    }
+
+    const interests: string[] = []
+    if (bottleServiceInterest) interests.push(`Bottle Service${bottleBudget ? ` (${bottleBudget})` : ''}`)
+    if (interestBoat) interests.push('Boat Party')
+    if (interestPartyBus) interests.push('Party Bus')
+
+    if (interests.length > 0) {
+      const eventTitle = event.title || 'an event'
+      const clubName = (event as { club?: { name?: string } | null }).club?.name
+      await sendAdminPush({
+        title: `New ${interests.join(' + ')} Interest`,
+        body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)} · ${eventTitle}${clubName ? ` @ ${clubName}` : ''}`,
+        url: '/admin/guests',
       })
     }
 

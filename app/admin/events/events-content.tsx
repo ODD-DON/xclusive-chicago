@@ -12,6 +12,7 @@ import {
   Link2,
   MoreVertical,
   Trash2,
+  Pencil,
   AlertTriangle,
   ExternalLink,
 } from 'lucide-react'
@@ -93,16 +94,39 @@ export function EventsContent({
   const [hasFetched, setHasFetched] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState<ReviewForm>(emptyReviewForm)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
 
   const resetDialog = () => {
     setMode('link')
     setLinkUrl('')
     setHasFetched(false)
     setForm(emptyReviewForm)
+    setEditingEventId(null)
   }
 
   const openDialog = () => {
     resetDialog()
+    setIsDialogOpen(true)
+  }
+
+  const openEditDialog = (event: Event & { club: Club | null }) => {
+    setMode('manual')
+    setLinkUrl('')
+    setForm({
+      title: event.title || '',
+      eventDate: event.event_date,
+      eventTime: event.unlock_time ? event.unlock_time.slice(0, 5) : '',
+      imageUrl: event.image_url || '',
+      description: event.description || '',
+      clubId: event.club_id || '',
+      ticketUrl: event.ticket_url || '',
+      sourceUrl: event.source_url || '',
+      sourcePlatform: event.source_platform || '',
+      scrapedVenueName: event.scraped_venue_name || '',
+      scrapedVenueAddress: event.scraped_venue_address || '',
+    })
+    setHasFetched(true)
+    setEditingEventId(event.id)
     setIsDialogOpen(true)
   }
 
@@ -161,36 +185,44 @@ export function EventsContent({
 
     setIsSubmitting(true)
 
+    const payload = {
+      title: form.title.trim(),
+      club_id: form.clubId || null,
+      event_date: form.eventDate,
+      unlock_time: form.eventTime ? `${form.eventTime}:00` : null,
+      image_url: form.imageUrl || null,
+      description: form.description || null,
+      ticket_url: form.ticketUrl || null,
+      source_url: form.sourceUrl || null,
+      source_platform: form.sourcePlatform || null,
+      scraped_venue_name: form.scrapedVenueName || null,
+      scraped_venue_address: form.scrapedVenueAddress || null,
+    }
+
     try {
-      const response = await fetch('/api/admin/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          club_id: form.clubId || null,
-          event_date: form.eventDate,
-          unlock_time: form.eventTime ? `${form.eventTime}:00` : null,
-          image_url: form.imageUrl || null,
-          description: form.description || null,
-          ticket_url: form.ticketUrl || null,
-          source_url: mode === 'link' ? form.sourceUrl || null : null,
-          source_platform: mode === 'link' ? form.sourcePlatform || null : null,
-          scraped_venue_name: form.scrapedVenueName || null,
-          scraped_venue_address: form.scrapedVenueAddress || null,
-        }),
-      })
+      const response = editingEventId
+        ? await fetch('/api/admin/events', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: editingEventId, ...payload }),
+          })
+        : await fetch('/api/admin/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to create event')
+        throw new Error(data.error || 'Failed to save event')
       }
 
-      toast.success('Event added')
+      toast.success(editingEventId ? 'Event updated' : 'Event added')
       setIsDialogOpen(false)
       resetDialog()
       router.refresh()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create')
+      toast.error(error instanceof Error ? error.message : 'Failed to save')
     } finally {
       setIsSubmitting(false)
     }
@@ -382,6 +414,10 @@ export function EventsContent({
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => openEditDialog(event)}>
+                                      <Pencil className="w-4 h-4 mr-2" />
+                                      Edit
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => deleteEvent(event)}
                                       className="text-destructive"
@@ -410,7 +446,7 @@ export function EventsContent({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Event</DialogTitle>
+            <DialogTitle>{editingEventId ? 'Edit Event' : 'Add Event'}</DialogTitle>
           </DialogHeader>
 
           {mode === 'link' ? (

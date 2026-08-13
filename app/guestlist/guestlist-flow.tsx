@@ -162,7 +162,7 @@ export function EventFeed({ events, approvedCounts }: EventFeedProps) {
 
                     <div className="flex gap-2 pt-1">
                       <Button
-                        className="flex-1 bg-gold hover:bg-gold-light text-background disabled:opacity-50"
+                        className="flex-1 bg-gold hover:bg-gold-light text-background disabled:opacity-50 h-12 text-base rounded-lg"
                         disabled={!actionable}
                         onClick={() => setAccessEvent(event)}
                       >
@@ -349,7 +349,7 @@ function RequestAccessDialog({
 
   return (
     <Dialog open={!!event} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="overflow-hidden">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Request Xclusive Access</DialogTitle>
         </DialogHeader>
@@ -385,7 +385,7 @@ function RequestAccessDialog({
               {step === 0 && (
                 <>
                   <StepHeading title="Who's coming?" subtitle="Let's start with you." />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>First Name</Label>
                       <Input
@@ -402,23 +402,23 @@ function RequestAccessDialog({
                   </div>
                   <div className="space-y-2">
                     <Label>Number of Guests</Label>
-                    <div className="flex items-center gap-4 bg-muted border border-border/50 rounded-lg px-3 py-2 w-fit">
+                    <div className="flex items-center justify-between gap-4 bg-muted border border-border/50 rounded-lg px-3 h-9 w-full">
                       <button
                         type="button"
                         onClick={() => setGuestCount((c) => String(Math.max(1, parseInt(c, 10) - 1)))}
                         disabled={parseInt(guestCount, 10) <= 1}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-lg leading-none hover:bg-background/60 disabled:opacity-30 transition-colors"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-lg leading-none hover:bg-background/60 disabled:opacity-30 transition-colors shrink-0"
                       >
                         −
                       </button>
-                      <span className="w-20 text-center text-sm">
+                      <span className="text-center text-sm">
                         {guestCount} {parseInt(guestCount, 10) === 1 ? 'guest' : 'guests'}
                       </span>
                       <button
                         type="button"
                         onClick={() => setGuestCount((c) => String(Math.min(8, parseInt(c, 10) + 1)))}
                         disabled={parseInt(guestCount, 10) >= 8}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-lg leading-none hover:bg-background/60 disabled:opacity-30 transition-colors"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-lg leading-none hover:bg-background/60 disabled:opacity-30 transition-colors shrink-0"
                       >
                         +
                       </button>
@@ -584,12 +584,12 @@ function RequestAccessDialog({
 
         <div className="flex items-center gap-2 pt-1">
           {step > 0 && (
-            <Button type="button" variant="ghost" onClick={goBack} className="text-muted-foreground">
+            <Button type="button" variant="ghost" onClick={goBack} className="h-12 px-4 text-base text-muted-foreground">
               Back
             </Button>
           )}
           {step < totalSteps - 1 ? (
-            <Button type="button" onClick={goNext} className="flex-1 bg-gold hover:bg-gold-light text-background">
+            <Button type="button" onClick={goNext} className="flex-1 h-12 text-base rounded-lg bg-gold hover:bg-gold-light text-background">
               Continue
             </Button>
           ) : (
@@ -597,7 +597,7 @@ function RequestAccessDialog({
               type="button"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              className="flex-1 bg-gold hover:bg-gold-light text-background"
+              className="flex-1 h-12 text-base rounded-lg bg-gold hover:bg-gold-light text-background"
             >
               {isSubmitting ? <Spinner className="w-4 h-4" /> : 'Request Access'}
             </Button>

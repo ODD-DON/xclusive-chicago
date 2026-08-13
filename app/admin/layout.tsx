@@ -10,6 +10,7 @@ import {
   Building2,
   Calendar,
   Users,
+  UserCheck,
   Wine,
   Menu,
   X,
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/clubs', label: 'Clubs', icon: Building2 },
   { href: '/admin/events', label: 'Events', icon: Calendar },
+  { href: '/admin/access', label: 'Access', icon: UserCheck },
   { href: '/admin/guests', label: 'Guests', icon: Users },
   { href: '/admin/vip', label: 'VIP Requests', icon: Wine },
 ]

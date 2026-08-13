@@ -144,7 +144,7 @@ function GuestlistFormContent() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="w-4 h-4 text-gold" />
                 <span>
-                  Free entry before{' '}
+                  Complimentary access before{' '}
                   <span className="text-gold font-medium">
                     {event.cutoff_time || event.club.default_cutoff_time || '11:00 PM'}
                   </span>

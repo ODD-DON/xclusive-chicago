@@ -62,18 +62,30 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
   const [form, setForm] = useState({
     name: '',
     address: '',
+    neighborhood: '',
+    dressCode: '',
     description: '',
     imageUrl: '' as string,
+    galleryUrls: [] as string[],
+    bottleMenuUrls: [] as string[],
     size: 'medium' as ClubSize,
     musicStyles: [] as MusicStyle[],
   })
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false)
+  const [isUploadingMenu, setIsUploadingMenu] = useState(false)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const menuInputRef = useRef<HTMLInputElement>(null)
 
   const resetForm = () => {
     setForm({
       name: '',
       address: '',
+      neighborhood: '',
+      dressCode: '',
       description: '',
       imageUrl: '',
+      galleryUrls: [],
+      bottleMenuUrls: [],
       size: 'medium',
       musicStyles: [],
     })
@@ -90,8 +102,12 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
     setForm({
       name: club.name,
       address: club.address || '',
+      neighborhood: club.neighborhood || '',
+      dressCode: club.dress_code || '',
       description: club.description || '',
       imageUrl: club.image_url || '',
+      galleryUrls: club.gallery_urls || [],
+      bottleMenuUrls: club.bottle_menu_urls || [],
       size: club.size || 'medium',
       musicStyles: (club.music_styles as MusicStyle[]) || [],
     })
@@ -141,6 +157,73 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
     setForm((prev) => ({ ...prev, imageUrl: '' }))
   }
 
+  const uploadOne = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await fetch('/api/admin/clubs/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.error || 'Upload failed')
+    }
+    const { url } = await response.json()
+    return url as string
+  }
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    setIsUploadingGallery(true)
+    try {
+      const urls = await Promise.all(files.map(uploadOne))
+      setForm((prev) => ({ ...prev, galleryUrls: [...prev.galleryUrls, ...urls] }))
+      toast.success(urls.length > 1 ? `${urls.length} photos added` : 'Photo added')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setIsUploadingGallery(false)
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
+    }
+  }
+
+  const removeGalleryPhoto = (url: string) => {
+    setForm((prev) => ({ ...prev, galleryUrls: prev.galleryUrls.filter((u) => u !== url) }))
+  }
+
+  const moveGalleryPhoto = (index: number, direction: -1 | 1) => {
+    setForm((prev) => {
+      const next = [...prev.galleryUrls]
+      const target = index + direction
+      if (target < 0 || target >= next.length) return prev
+      ;[next[index], next[target]] = [next[target], next[index]]
+      return { ...prev, galleryUrls: next }
+    })
+  }
+
+  const handleMenuUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    setIsUploadingMenu(true)
+    try {
+      const urls = await Promise.all(files.map(uploadOne))
+      setForm((prev) => ({ ...prev, bottleMenuUrls: [...prev.bottleMenuUrls, ...urls] }))
+      toast.success(urls.length > 1 ? `${urls.length} menu photos added` : 'Menu photo added')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setIsUploadingMenu(false)
+      if (menuInputRef.current) menuInputRef.current.value = ''
+    }
+  }
+
+  const removeMenuPhoto = (url: string) => {
+    setForm((prev) => ({ ...prev, bottleMenuUrls: prev.bottleMenuUrls.filter((u) => u !== url) }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) {
@@ -158,8 +241,12 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
           id: editingClub?.id,
           name: form.name.trim(),
           address: form.address.trim() || null,
+          neighborhood: form.neighborhood.trim() || null,
+          dress_code: form.dressCode.trim() || null,
           description: form.description.trim() || null,
           image_url: form.imageUrl || null,
+          gallery_urls: form.galleryUrls,
+          bottle_menu_urls: form.bottleMenuUrls,
           size: form.size,
           music_styles: form.musicStyles,
         }),
@@ -412,6 +499,98 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
             </div>
 
             <div className="space-y-2">
+              <Label>Atmosphere Photos</Label>
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryUpload}
+                className="hidden"
+              />
+              <div className="flex flex-wrap gap-2">
+                {form.galleryUrls.map((url, index) => (
+                  <div key={url} className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted group">
+                    <Image src={url} alt="Venue atmosphere" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryPhoto(url)}
+                      className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-background/80 hover:bg-background transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <div className="absolute inset-x-0 bottom-0 flex opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => moveGalleryPhoto(index, -1)}
+                        disabled={index === 0}
+                        className="flex-1 py-0.5 bg-background/80 hover:bg-background disabled:opacity-30 text-xs"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveGalleryPhoto(index, 1)}
+                        disabled={index === form.galleryUrls.length - 1}
+                        className="flex-1 py-0.5 bg-background/80 hover:bg-background disabled:opacity-30 text-xs"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={isUploadingGallery}
+                  className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 hover:border-gold/50 transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  {isUploadingGallery ? <Spinner className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Extra photos so people can see the atmosphere. Select multiple at once, hover a photo to reorder.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bottle Service Menu Photos</Label>
+              <input
+                ref={menuInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleMenuUpload}
+                className="hidden"
+              />
+              <div className="flex flex-wrap gap-2">
+                {form.bottleMenuUrls.map((url) => (
+                  <div key={url} className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                    <Image src={url} alt="Bottle service menu" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeMenuPhoto(url)}
+                      className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-background/80 hover:bg-background transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => menuInputRef.current?.click()}
+                  disabled={isUploadingMenu}
+                  className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 hover:border-gold/50 transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  {isUploadingMenu ? <Spinner className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Shown to guests who say they're interested in bottle service for this venue
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="name">Club Name</Label>
               <Input
                 id="name"
@@ -431,6 +610,29 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
                 placeholder="123 Main St, Chicago, IL"
                 className="bg-muted border-border/50"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">Neighborhood</Label>
+                <Input
+                  id="neighborhood"
+                  value={form.neighborhood}
+                  onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                  placeholder="Gold Coast"
+                  className="bg-muted border-border/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dressCode">Dress Code</Label>
+                <Input
+                  id="dressCode"
+                  value={form.dressCode}
+                  onChange={(e) => setForm({ ...form, dressCode: e.target.value })}
+                  placeholder="Upscale attire"
+                  className="bg-muted border-border/50"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

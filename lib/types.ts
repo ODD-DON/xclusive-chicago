@@ -29,6 +29,10 @@ export interface Club {
   lng: number
   geofence_miles: number
   image_url: string | null
+  gallery_urls: string[] | null
+  bottle_menu_urls: string[] | null
+  neighborhood: string | null
+  dress_code: string | null
   description: string | null
   is_active: boolean
   recurring_days: number[] | null
@@ -63,7 +67,65 @@ export interface Event {
   description: string | null
   scraped_venue_name: string | null
   scraped_venue_address: string | null
+  allocation: number | null
+  release_number: number
+  approval_mode: 'auto' | 'manual'
+  waitlist_enabled: boolean
+  access_status_override: string | null
+  featured: boolean
+  member_only: boolean
+  vip_only: boolean
+  announcement_text: string | null
   club?: Club
+}
+
+export type AccessStatus =
+  | 'ACCESS_OPEN'
+  | 'LIMITED_ACCESS'
+  | 'FINAL_RELEASE'
+  | 'SOLD_OUT'
+  | 'WAITLIST'
+  | 'ACCESS_CLOSED'
+  | 'COMING_SOON'
+
+export interface Member {
+  id: string
+  app_id: string
+  first_name: string
+  last_name: string
+  phone: string
+  email: string | null
+  instagram: string | null
+  sms_consent: boolean
+  email_consent: boolean
+  source: string | null
+  member_status: string
+  created_at: string
+}
+
+export type AccessRequestStatus = 'pending' | 'approved' | 'waitlisted' | 'denied'
+
+export const CELEBRATION_TYPES = ['Birthday', 'Bachelorette', 'Bachelor', 'Anniversary', 'Just a Night Out', 'Other'] as const
+export type CelebrationType = (typeof CELEBRATION_TYPES)[number]
+
+export interface AccessRequest {
+  id: string
+  app_id: string
+  member_id: string
+  event_id: string
+  guest_count: number
+  status: AccessRequestStatus
+  access_code: string
+  requested_at: string
+  approved_at: string | null
+  rsvp_completed_at: string | null
+  celebration_type: string | null
+  celebration_other: string | null
+  bottle_service_interest: boolean
+  interest_boat: boolean
+  interest_party_bus: boolean
+  member?: Member
+  event?: Event & { club: Club | null }
 }
 
 export interface Schedule {

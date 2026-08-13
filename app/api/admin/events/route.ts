@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         scraped_venue_name: body.scraped_venue_name || null,
         scraped_venue_address: body.scraped_venue_address || null,
+        allocation: body.allocation ?? null,
+        release_number: body.release_number || 1,
+        approval_mode: body.approval_mode || 'auto',
+        waitlist_enabled: !!body.waitlist_enabled,
+        access_status_override: body.access_status_override || null,
+        featured: !!body.featured,
+        member_only: !!body.member_only,
+        vip_only: !!body.vip_only,
+        announcement_text: body.announcement_text || null,
       })
       .select()
       .single()

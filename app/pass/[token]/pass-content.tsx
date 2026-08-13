@@ -266,7 +266,7 @@ export function PassContent({ registration }: Props) {
                 <div className="flex items-center gap-3 text-sm">
                   <Clock className="w-4 h-4 text-gold" />
                   <span>
-                    Free entry until {formatTime(currentRegistration.event.cutoff_time)}
+                    Complimentary access until {formatTime(currentRegistration.event.cutoff_time)}
                   </span>
                 </div>
               )}
@@ -386,7 +386,7 @@ export function PassContent({ registration }: Props) {
                   </div>
                   <p className="text-destructive font-medium mb-2">Pass Expired</p>
                   <p className="text-sm text-muted-foreground">
-                    The free entry window has closed
+                    The complimentary access window has closed
                   </p>
                 </motion.div>
               )}

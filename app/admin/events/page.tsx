@@ -31,22 +31,27 @@ async function getData() {
     .eq('is_active', true)
     .order('name', { ascending: true })
 
-  // Get VIP/bottle-service interest counts per event (guests no longer
-  // register through the app, so this is the meaningful per-event signal now)
-  const { data: vipCounts } = await supabase
-    .from('xc_vip_requests')
-    .select('event_id')
+  // Access request counts per event: total (for the delete guard) and
+  // approved-only (for computing each event's access status/remaining passes)
+  const { data: accessRequests } = await supabase
+    .from('xc_access_requests')
+    .select('event_id, status')
     .eq('app_id', APP_ID)
 
-  const countMap: Record<string, number> = {}
-  vipCounts?.forEach((req) => {
-    countMap[req.event_id] = (countMap[req.event_id] || 0) + 1
+  const requestCounts: Record<string, number> = {}
+  const approvedCounts: Record<string, number> = {}
+  accessRequests?.forEach((req) => {
+    requestCounts[req.event_id] = (requestCounts[req.event_id] || 0) + 1
+    if (req.status === 'approved') {
+      approvedCounts[req.event_id] = (approvedCounts[req.event_id] || 0) + 1
+    }
   })
 
   return {
     events: events || [],
     clubs: clubs || [],
-    registrationCounts: countMap,
+    requestCounts,
+    approvedCounts,
   }
 }
 

@@ -1,33 +1,42 @@
 import { createServiceClient } from '@/lib/supabase/service'
-import { APP_ID, Event, Club } from '@/lib/types'
-import { HomeContent } from './home-content'
+import { APP_ID, Event } from '@/lib/types'
+import { notFound } from 'next/navigation'
+import { VenueContent } from './venue-content'
 
 export const dynamic = 'force-dynamic'
 
-async function getCurrentDrops() {
+interface Props {
+  params: Promise<{ slug: string }>
+}
+
+export default async function VenuePage({ params }: Props) {
+  const { slug } = await params
   const supabase = createServiceClient()
+
+  const { data: club, error } = await supabase
+    .from('xc_clubs')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single()
+
+  if (error || !club) {
+    notFound()
+  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const todayStr = today.toISOString().split('T')[0]
 
-  const { data: events, error } = await supabase
+  const { data: events } = await supabase
     .from('xc_events')
-    .select(`
-      *,
-      club:xc_clubs(*)
-    `)
+    .select('*')
     .eq('app_id', APP_ID)
+    .eq('club_id', club.id)
     .eq('is_active', true)
     .gte('event_date', todayStr)
-    .order('featured', { ascending: false })
     .order('event_date', { ascending: true })
-    .limit(6)
-
-  if (error) {
-    console.error('Error fetching current drops:', error)
-    return { events: [], approvedCounts: {} }
-  }
 
   const eventIds = (events || []).map((e) => e.id)
   const approvedCounts: Record<string, number> = {}
@@ -45,13 +54,11 @@ async function getCurrentDrops() {
     })
   }
 
-  return {
-    events: (events || []) as (Event & { club: Club | null })[],
-    approvedCounts,
-  }
-}
-
-export default async function HomePage() {
-  const { events, approvedCounts } = await getCurrentDrops()
-  return <HomeContent events={events} approvedCounts={approvedCounts} />
+  return (
+    <VenueContent
+      club={club}
+      events={(events || []) as Event[]}
+      approvedCounts={approvedCounts}
+    />
+  )
 }

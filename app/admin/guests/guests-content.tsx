@@ -1,352 +1,241 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { format, parseISO, isSameDay } from 'date-fns'
-import {
-  Users,
-  Search,
-  Filter,
-  CheckCircle2,
-  Clock,
-  Download,
-  MapPin,
-  Phone,
-  Mail,
-} from 'lucide-react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { format, parseISO } from 'date-fns'
+import { Check, X, Clock, Users, Phone, Mail, Instagram } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import type { Registration, Club, Event } from '@/lib/types'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from 'sonner'
+import type { AccessRequest, Member } from '@/lib/types'
 
 interface GuestsContentProps {
-  registrations: (Registration & { club: { name: string; address: string }; event: Event })[]
-  clubs: { id: string; name: string }[]
-  eventDates: string[]
+  accessRequests: AccessRequest[]
+  members: Member[]
 }
 
-export function GuestsContent({ registrations, clubs, eventDates }: GuestsContentProps) {
-  const [search, setSearch] = useState('')
-  const [clubFilter, setClubFilter] = useState<string>('all')
-  const [dateFilter, setDateFilter] = useState<string>('all')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+// Clusters requests that share an invite link (referred_by_code) together,
+// leader first then followers by request time, groups ordered by most recent activity.
+function groupRequests(list: AccessRequest[]): AccessRequest[][] {
+  const clusters = new Map<string, AccessRequest[]>()
+  list.forEach((r) => {
+    const key = r.referred_by_code || r.access_code
+    if (!clusters.has(key)) clusters.set(key, [])
+    clusters.get(key)!.push(r)
+  })
 
-  const today = new Date()
+  const groups = Array.from(clusters.values()).map((members) =>
+    [...members].sort((a, b) => new Date(a.requested_at).getTime() - new Date(b.requested_at).getTime()),
+  )
 
-  const filtered = useMemo(() => {
-    return registrations.filter((reg) => {
-      // Search filter
-      if (search) {
-        const searchLower = search.toLowerCase()
-        const fullName = `${reg.first_name} ${reg.last_name}`.toLowerCase()
-        const phone = reg.phone?.toLowerCase() || ''
-        const email = reg.email?.toLowerCase() || ''
-        if (
-          !fullName.includes(searchLower) &&
-          !phone.includes(searchLower) &&
-          !email.includes(searchLower)
-        ) {
-          return false
-        }
-      }
+  groups.sort((a, b) => {
+    const aMax = Math.max(...a.map((m) => new Date(m.requested_at).getTime()))
+    const bMax = Math.max(...b.map((m) => new Date(m.requested_at).getTime()))
+    return bMax - aMax
+  })
 
-      // Club filter
-      if (clubFilter !== 'all' && reg.club_id !== clubFilter) {
-        return false
-      }
+  return groups
+}
 
-      // Date filter
-      if (dateFilter !== 'all' && reg.event_date !== dateFilter) {
-        return false
-      }
+const STATUS_STYLES: Record<string, string> = {
+  pending: 'bg-amber-500/20 text-amber-500',
+  approved: 'bg-green-500/20 text-green-500',
+  waitlisted: 'bg-muted text-muted-foreground',
+  denied: 'bg-red-500/20 text-red-500',
+}
 
-      // Status filter
-      if (statusFilter === 'activated' && !reg.activated_at) {
-        return false
-      }
-      if (statusFilter === 'opened' && (!reg.pass_opened_at || reg.activated_at)) {
-        return false
-      }
-      if (statusFilter === 'registered' && (reg.pass_opened_at || reg.activated_at)) {
-        return false
-      }
+export function GuestsContent({ accessRequests: initialRequests, members }: GuestsContentProps) {
+  const router = useRouter()
+  const [requests, setRequests] = useState(initialRequests)
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending')
 
-      return true
-    })
-  }, [registrations, search, clubFilter, dateFilter, statusFilter])
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      const response = await fetch('/api/admin/access-requests', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
 
-  // Stats - Updated for new journey tracking
-  const stats = useMemo(() => {
-    const todayRegs = registrations.filter((r) =>
-      isSameDay(parseISO(r.event_date), today)
-    )
-    return {
-      total: registrations.length,
-      opened: registrations.filter((r) => r.pass_opened_at).length,
-      activated: registrations.filter((r) => r.activated_at).length,
-      today: todayRegs.length,
-      todayActivated: todayRegs.filter((r) => r.activated_at).length,
-      showRate: todayRegs.length > 0 
-        ? Math.round((todayRegs.filter((r) => r.activated_at).length / todayRegs.length) * 100)
-        : 0,
+      if (!response.ok) throw new Error('Failed to update')
+
+      setRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: status as AccessRequest['status'] } : r))
+      )
+      toast.success(`Marked ${status}`)
+      router.refresh()
+    } catch {
+      toast.error('Failed to update request')
     }
-  }, [registrations, today])
-
-  const exportCSV = () => {
-    const headers = [
-      'Name',
-      'Phone',
-      'Email',
-      'Club',
-      'Date',
-      'Group Size',
-      'Status',
-      'Signed Up',
-      'Pass Opened',
-      'Activated At',
-      'Distance (mi)',
-    ]
-    const rows = filtered.map((reg) => [
-      `${reg.first_name} ${reg.last_name}`,
-      reg.phone,
-      reg.email || '',
-      reg.club?.name || '',
-      format(parseISO(reg.event_date), 'yyyy-MM-dd'),
-      reg.total_count || 1,
-      reg.activated_at ? 'Activated' : reg.pass_opened_at ? 'Opened' : 'Registered',
-      format(new Date(reg.created_at), 'yyyy-MM-dd HH:mm'),
-      reg.pass_opened_at ? format(new Date(reg.pass_opened_at), 'yyyy-MM-dd HH:mm') : '',
-      reg.activated_at ? format(new Date(reg.activated_at), 'yyyy-MM-dd HH:mm') : '',
-      reg.activation_distance_miles?.toFixed(2) || '',
-    ])
-
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `xclusive-guests-${format(new Date(), 'yyyy-MM-dd')}.csv`
-    a.click()
   }
+
+  const visibleRequests = filter === 'pending' ? requests.filter((r) => r.status === 'pending') : requests
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-light mb-2">Guests</h1>
-          <p className="text-muted-foreground">
-            {stats.total} registrations ({stats.unlocked} unlocked)
-          </p>
-        </div>
-        <Button onClick={exportCSV} variant="outline" className="border-border/50">
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
+      <div>
+        <h1 className="text-2xl font-light mb-2">Guests</h1>
+        <p className="text-muted-foreground">Review access requests and see who&apos;s on the list</p>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-card border-border/50">
-          <CardContent className="p-4">
-            <p className="text-2xl font-semibold">{stats.total}</p>
-            <p className="text-sm text-muted-foreground">Signed Up</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border/50">
-          <CardContent className="p-4">
-            <p className="text-2xl font-semibold">{stats.opened}</p>
-            <p className="text-sm text-muted-foreground">Opened Pass</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border/50 border-green-500/30">
-          <CardContent className="p-4">
-            <p className="text-2xl font-semibold text-green-500">{stats.activated}</p>
-            <p className="text-sm text-muted-foreground">Activated (Billable)</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border/50 border-gold/30">
-          <CardContent className="p-4">
-            <p className="text-2xl font-semibold text-gold">{stats.today}</p>
-            <p className="text-sm text-muted-foreground">Tonight&apos;s List</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border/50">
-          <CardContent className="p-4">
-            <p className="text-2xl font-semibold">{stats.showRate}%</p>
-            <p className="text-sm text-muted-foreground">Show Rate</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="requests">
+        <TabsList>
+          <TabsTrigger value="requests">Access Requests</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, or email..."
-            className="pl-10 bg-card border-border/50"
-          />
-        </div>
+        <TabsContent value="requests" className="space-y-4 pt-4">
+          <div className="flex gap-2">
+            <Button
+              variant={filter === 'pending' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('pending')}
+              className={filter === 'pending' ? 'bg-gold hover:bg-gold-light text-background' : ''}
+            >
+              Pending ({requests.filter((r) => r.status === 'pending').length})
+            </Button>
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('all')}
+              className={filter === 'all' ? 'bg-gold hover:bg-gold-light text-background' : ''}
+            >
+              All ({requests.length})
+            </Button>
+          </div>
 
-        <Select value={clubFilter} onValueChange={setClubFilter}>
-          <SelectTrigger className="w-[180px] bg-card border-border/50">
-            <SelectValue placeholder="All Clubs" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Clubs</SelectItem>
-            {clubs.map((club) => (
-              <SelectItem key={club.id} value={club.id}>
-                {club.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {visibleRequests.length === 0 ? (
+            <Card className="bg-card border-border/50">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                {filter === 'pending' ? 'No pending requests' : 'No access requests yet'}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {groupRequests(visibleRequests).map((group) => (
+                <div
+                  key={group[0].id}
+                  className={group.length > 1 ? 'space-y-2 border-l-2 border-gold/40 pl-3' : ''}
+                >
+                  {group.length > 1 && (
+                    <p className="text-xs font-medium text-gold flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Group of {group.length}
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    {group.map((req) => (
+                      <Card key={req.id} className="bg-card border-border/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-medium">
+                                  {req.member?.first_name} {req.member?.last_name}
+                                </h3>
+                                <Badge className={`${STATUS_STYLES[req.status]} border-0`}>{req.status}</Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <Phone className="w-3.5 h-3.5" />
+                                  <span>{formatPhone(req.member?.phone || '')}</span>
+                                </div>
+                                {req.member?.email && (
+                                  <div className="flex items-center gap-1.5">
+                                    <Mail className="w-3.5 h-3.5" />
+                                    <span>{req.member.email}</span>
+                                  </div>
+                                )}
+                                {req.member?.instagram && (
+                                  <a
+                                    href={`https://instagram.com/${req.member.instagram.replace(/^@/, '')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1.5 text-gold hover:underline"
+                                  >
+                                    <Instagram className="w-3.5 h-3.5" />
+                                    <span>@{req.member.instagram.replace(/^@/, '')}</span>
+                                  </a>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                  <Users className="w-3.5 h-3.5" />
+                                  <span>{req.guest_count} {req.guest_count === 1 ? 'guest' : 'guests'}</span>
+                                </div>
+                              </div>
+                              <p className="text-sm">
+                                {req.event?.title} &middot; {req.event?.club?.name}
+                                {req.event?.event_date && ` · ${format(parseISO(req.event.event_date), 'MMM d')}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Requested {format(new Date(req.requested_at), 'MMM d, h:mm a')}
+                              </p>
+                            </div>
 
-        <Select value={dateFilter} onValueChange={setDateFilter}>
-          <SelectTrigger className="w-[180px] bg-card border-border/50">
-            <SelectValue placeholder="All Dates" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Dates</SelectItem>
-            {eventDates.map((date) => (
-              <SelectItem key={date} value={date}>
-                {format(parseISO(date), 'EEE, MMM d')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px] bg-card border-border/50">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="activated">Activated</SelectItem>
-            <SelectItem value="opened">Opened Pass</SelectItem>
-            <SelectItem value="registered">Registered Only</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Guest list */}
-      {filtered.length === 0 ? (
-        <Card className="bg-card border-border/50">
-          <CardContent className="py-12 text-center">
-            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No guests found</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((reg) => {
-            const isToday = isSameDay(parseISO(reg.event_date), today)
-
-            return (
-              <Card
-                key={reg.id}
-                className={`bg-card border-border/50 ${
-                  isToday ? 'border-gold/30' : ''
-                }`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">
-                          {reg.first_name} {reg.last_name}
-                        </h3>
-                        {reg.activated_at ? (
-                          <Badge
-                            variant="secondary"
-                            className="bg-green-500/20 text-green-500 border-0"
-                          >
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Activated
-                          </Badge>
-                        ) : reg.pass_opened_at ? (
-                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-0">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Opened Pass
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground border-0">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Registered
-                          </Badge>
-                        )}
-                        {isToday && (
-                          <Badge className="bg-gold/20 text-gold border-0">Tonight</Badge>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5" />
-                          <span>{reg.club?.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>{formatPhone(reg.phone)}</span>
-                        </div>
-                        {reg.email && (
-                          <div className="flex items-center gap-1">
-                            <Mail className="w-3.5 h-3.5" />
-                            <span>{reg.email}</span>
+                            {req.status === 'pending' && (
+                              <div className="flex gap-2 shrink-0">
+                                <Button size="sm" onClick={() => updateStatus(req.id, 'approved')} className="bg-green-600 hover:bg-green-700 text-white">
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => updateStatus(req.id, 'denied')}>
+                                  <X className="w-4 h-4 mr-1" />
+                                  Deny
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
-                        <span>
-                          {format(parseISO(reg.event_date), 'EEE, MMM d')}
-                        </span>
-                        {reg.total_count > 1 && (
-                          <span>Group of {reg.total_count}</span>
-                        )}
-                        {reg.bottle_service && (
-                          <span className="text-gold">VIP Interest</span>
-                        )}
-                        {reg.celebration_type && (
-                          <span className="capitalize">{reg.celebration_type}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-right text-xs text-muted-foreground space-y-1">
-                      <div>
-                        <p className="text-muted-foreground/60">Signed up</p>
-                        <p>{format(new Date(reg.created_at), 'MMM d, h:mm a')}</p>
-                      </div>
-                      {reg.pass_opened_at && (
-                        <div>
-                          <p className="text-blue-400/80">Opened</p>
-                          <p>{format(new Date(reg.pass_opened_at), 'h:mm a')}</p>
-                        </div>
-                      )}
-                      {reg.activated_at && (
-                        <div>
-                          <p className="text-green-500">Activated</p>
-                          <p>{format(new Date(reg.activated_at), 'h:mm a')}</p>
-                        </div>
+        <TabsContent value="members" className="space-y-3 pt-4">
+          {members.length === 0 ? (
+            <Card className="bg-card border-border/50">
+              <CardContent className="py-12 text-center text-muted-foreground">No members yet</CardContent>
+            </Card>
+          ) : (
+            members.map((member) => (
+              <Card key={member.id} className="bg-card border-border/50">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium">
+                      {member.first_name} {member.last_name}
+                    </p>
+                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
+                      <span>{formatPhone(member.phone)}</span>
+                      {member.email && <span>{member.email}</span>}
+                      {member.instagram && (
+                        <a
+                          href={`https://instagram.com/${member.instagram.replace(/^@/, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-gold hover:underline"
+                        >
+                          <Instagram className="w-3.5 h-3.5" />
+                          @{member.instagram.replace(/^@/, '')}
+                        </a>
                       )}
                     </div>
                   </div>
+                  <div className="text-right text-xs text-muted-foreground shrink-0">
+                    <p className="capitalize">{member.member_status}</p>
+                    <p>Joined {format(new Date(member.created_at), 'MMM d, yyyy')}</p>
+                  </div>
                 </CardContent>
               </Card>
-            )
-          })}
-        </div>
-      )}
+            ))
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
@@ -355,9 +244,6 @@ function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 10) {
     return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
-  }
-  if (cleaned.length === 11 && cleaned[0] === '1') {
-    return `(${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`
   }
   return phone
 }

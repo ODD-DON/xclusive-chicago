@@ -45,7 +45,7 @@ export type GuestlistStatus = 'confirmed' | 'coming_soon' | 'sold_out'
 export interface Event {
   id: string
   app_id: string
-  club_id: string
+  club_id: string | null
   venue_id: string | null
   schedule_id: string | null
   event_date: string
@@ -55,6 +55,13 @@ export interface Event {
   is_active: boolean
   guestlist_status: GuestlistStatus
   created_at: string
+  source_url: string | null
+  source_platform: string | null
+  ticket_url: string | null
+  image_url: string | null
+  description: string | null
+  scraped_venue_name: string | null
+  scraped_venue_address: string | null
   club?: Club
 }
 

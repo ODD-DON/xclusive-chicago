@@ -31,15 +31,16 @@ async function getData() {
     .eq('is_active', true)
     .order('name', { ascending: true })
 
-  // Get registration counts per event
-  const { data: regCounts } = await supabase
-    .from('xc_registrations')
+  // Get VIP/bottle-service interest counts per event (guests no longer
+  // register through the app, so this is the meaningful per-event signal now)
+  const { data: vipCounts } = await supabase
+    .from('xc_vip_requests')
     .select('event_id')
     .eq('app_id', APP_ID)
 
   const countMap: Record<string, number> = {}
-  regCounts?.forEach((reg) => {
-    countMap[reg.event_id] = (countMap[reg.event_id] || 0) + 1
+  vipCounts?.forEach((req) => {
+    countMap[req.event_id] = (countMap[req.event_id] || 0) + 1
   })
 
   return {

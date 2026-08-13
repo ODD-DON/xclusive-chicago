@@ -5,17 +5,30 @@ import { APP_ID } from '@/lib/types'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    if (!body.event_date || !body.title) {
+      return NextResponse.json({ error: 'Missing event date or name' }, { status: 400 })
+    }
+
     const supabase = createServiceClient()
 
     const { data, error } = await supabase
       .from('xc_events')
       .insert({
         app_id: APP_ID,
-        club_id: body.club_id,
+        club_id: body.club_id || null,
         event_date: body.event_date,
-        unlock_time: body.unlock_time,
-        cutoff_time: body.cutoff_time,
+        title: body.title,
+        unlock_time: body.unlock_time || null,
+        cutoff_time: body.cutoff_time || null,
         is_active: true,
+        source_url: body.source_url || null,
+        source_platform: body.source_platform || null,
+        ticket_url: body.ticket_url || null,
+        image_url: body.image_url || null,
+        description: body.description || null,
+        scraped_venue_name: body.scraped_venue_name || null,
+        scraped_venue_address: body.scraped_venue_address || null,
       })
       .select()
       .single()

@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
+import { CELEBRATION_TYPES } from '@/lib/types'
 
 const BUDGET_OPTIONS = ['$500-1000', '$1000-2500', '$2500-5000', '$5000+']
 
@@ -25,6 +26,9 @@ export default function VipTablesPage() {
   const [budget, setBudget] = useState('')
   const [venuePreference, setVenuePreference] = useState('')
   const [outOfTown, setOutOfTown] = useState(false)
+  const [celebrationType, setCelebrationType] = useState('')
+  const [celebrationOther, setCelebrationOther] = useState('')
+  const [smsConsent, setSmsConsent] = useState(false)
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -34,6 +38,16 @@ export default function VipTablesPage() {
 
     if (!firstName.trim() || !lastName.trim() || phone.replace(/\D/g, '').length < 10) {
       toast.error('Enter your name and a valid phone number')
+      return
+    }
+
+    if (!instagram.trim()) {
+      toast.error('Enter your Instagram handle')
+      return
+    }
+
+    if (!smsConsent) {
+      toast.error('Please agree to receive SMS updates to continue')
       return
     }
 
@@ -47,12 +61,15 @@ export default function VipTablesPage() {
           lastName: lastName.trim(),
           phone,
           email: email.trim() || null,
-          instagram: instagram.trim() || null,
+          instagram: instagram.trim(),
           targetDate: targetDate.trim() || null,
           partySize: partySize || null,
           budget: budget || null,
           venuePreference: venuePreference.trim() || null,
           outOfTown,
+          celebrationType: celebrationType || null,
+          celebrationOther: celebrationType === 'Other' ? celebrationOther.trim() || null : null,
+          smsConsent,
           notes: notes.trim() || null,
         }),
       })
@@ -204,7 +221,7 @@ export default function VipTablesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Instagram (optional)</Label>
+                  <Label>Instagram</Label>
                   <Input
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
@@ -295,6 +312,71 @@ export default function VipTablesPage() {
               </label>
 
               <div className="space-y-2">
+                <Label>Celebrating something? (optional)</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {CELEBRATION_TYPES.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setCelebrationType((c) => (c === type ? '' : type))}
+                      className={`px-3 py-2.5 rounded-lg text-sm border text-center transition-colors ${
+                        celebrationType === type
+                          ? 'border-gold bg-gold/10 text-gold'
+                          : 'border-border/50 text-muted-foreground hover:border-gold/30'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+                {celebrationType === 'Other' && (
+                  <Input
+                    value={celebrationOther}
+                    onChange={(e) => setCelebrationOther(e.target.value)}
+                    placeholder="Tell us what you're celebrating"
+                    className="bg-muted border-border/50"
+                  />
+                )}
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer group p-3 -mx-3 rounded-lg hover:bg-muted/30 active:bg-muted/50 transition-colors">
+                <div className="relative flex items-center justify-center mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={smsConsent}
+                    onChange={(e) => setSmsConsent(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-5 h-5 rounded-md border-2 border-border bg-card peer-checked:bg-gold peer-checked:border-gold transition-all flex items-center justify-center shrink-0">
+                    {smsConsent && (
+                      <svg className="w-3.5 h-3.5 text-background" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-foreground leading-snug flex-1">
+                  I agree to receive SMS updates from Xclusive Chicago
+                </span>
+              </label>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                By submitting your phone number, you agree to receive SMS messages from Xclusive Chicago related to
+                your table request and booking details. Message frequency may vary. Message &amp; data rates may
+                apply. Reply STOP to opt out.
+              </p>
+
+              <p className="text-xs text-muted-foreground">
+                <Link href="/privacy" target="_blank" className="text-gold hover:underline">
+                  Privacy Policy
+                </Link>
+                {' | '}
+                <Link href="/terms-and-conditions" target="_blank" className="text-gold hover:underline">
+                  Terms &amp; Conditions
+                </Link>
+              </p>
+
+              <div className="space-y-2">
                 <Label>Notes (optional)</Label>
                 <Textarea
                   value={notes}
@@ -311,18 +393,6 @@ export default function VipTablesPage() {
               >
                 {isSubmitting ? <Spinner className="w-4 h-4" /> : 'Request a Table'}
               </Button>
-
-              <p className="text-sm text-muted-foreground text-center">
-                Or DM us on Instagram{' '}
-                <a
-                  href="https://instagram.com/xclusivechicago"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gold hover:underline"
-                >
-                  @xclusivechicago
-                </a>
-              </p>
             </form>
           )}
         </motion.div>

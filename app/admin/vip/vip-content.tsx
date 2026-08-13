@@ -1,9 +1,12 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   Wine,
   Phone,
+  MessageCircle,
   Users,
   DollarSign,
   Calendar,
@@ -13,6 +16,7 @@ import {
   Instagram,
   MapPin,
   Plane,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,6 +30,9 @@ interface VipContentProps {
 }
 
 export function VipContent({ requests, inquiries }: VipContentProps) {
+  const searchParams = useSearchParams()
+  const highlightId = searchParams.get('inquiry')
+
   return (
     <div className="space-y-6">
       <div>
@@ -53,91 +60,7 @@ export function VipContent({ requests, inquiries }: VipContentProps) {
           ) : (
             <div className="space-y-4">
               {inquiries.map((inquiry) => (
-                <Card key={inquiry.id} className="bg-card border-border/50">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <h3 className="font-medium text-lg">
-                            {inquiry.first_name} {inquiry.last_name}
-                          </h3>
-                          <Badge className="bg-gold/20 text-gold border-0">
-                            <Wine className="w-3 h-3 mr-1" />
-                            VIP
-                          </Badge>
-                          {inquiry.out_of_town && (
-                            <Badge variant="outline" className="border-gold/30 text-gold">
-                              <Plane className="w-3 h-3 mr-1" />
-                              Out of town
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Phone className="w-4 h-4" />
-                            <span>{formatPhone(inquiry.phone)}</span>
-                          </div>
-                          {inquiry.email && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Mail className="w-4 h-4" />
-                              <span>{inquiry.email}</span>
-                            </div>
-                          )}
-                          {inquiry.instagram && (
-                            <a
-                              href={`https://instagram.com/${inquiry.instagram.replace(/^@/, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-2 text-gold hover:underline"
-                            >
-                              <Instagram className="w-4 h-4" />
-                              <span>@{inquiry.instagram.replace(/^@/, '')}</span>
-                            </a>
-                          )}
-                          {inquiry.party_size && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Users className="w-4 h-4" />
-                              <span>{inquiry.party_size} people</span>
-                            </div>
-                          )}
-                          {inquiry.budget && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <DollarSign className="w-4 h-4" />
-                              <span>{inquiry.budget}</span>
-                            </div>
-                          )}
-                          {inquiry.target_date && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="w-4 h-4" />
-                              <span>{inquiry.target_date}</span>
-                            </div>
-                          )}
-                          {inquiry.venue_preference && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <MapPin className="w-4 h-4" />
-                              <span>{inquiry.venue_preference}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {inquiry.notes && (
-                          <div className="mt-3 p-3 bg-muted rounded-lg">
-                            <div className="flex items-start gap-2 text-sm">
-                              <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
-                              <p className="text-muted-foreground">{inquiry.notes}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="text-right text-xs text-muted-foreground shrink-0">
-                        <p>Requested</p>
-                        <p>{format(new Date(inquiry.created_at), 'MMM d, h:mm a')}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <InquiryCard key={inquiry.id} inquiry={inquiry} highlighted={inquiry.id === highlightId} />
               ))}
             </div>
           )}
@@ -170,10 +93,7 @@ export function VipContent({ requests, inquiries }: VipContentProps) {
                         </div>
 
                         <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Phone className="w-4 h-4" />
-                            <span>{formatPhone(request.phone)}</span>
-                          </div>
+                          <ContactPhone phone={request.phone} />
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Users className="w-4 h-4" />
                             <span>{request.group_size} people</span>
@@ -221,6 +141,140 @@ export function VipContent({ requests, inquiries }: VipContentProps) {
   )
 }
 
+function InquiryCard({ inquiry, highlighted }: { inquiry: VipInquiry; highlighted: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (highlighted && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [highlighted])
+
+  return (
+    <Card
+      ref={ref}
+      className={`bg-card border-border/50 transition-shadow ${
+        highlighted ? 'ring-2 ring-gold border-gold/50' : ''
+      }`}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <h3 className="font-medium text-lg">
+                {inquiry.first_name} {inquiry.last_name}
+              </h3>
+              <Badge className="bg-gold/20 text-gold border-0">
+                <Wine className="w-3 h-3 mr-1" />
+                VIP
+              </Badge>
+              {inquiry.out_of_town && (
+                <Badge variant="outline" className="border-gold/30 text-gold">
+                  <Plane className="w-3 h-3 mr-1" />
+                  Out of town
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <ContactPhone phone={inquiry.phone} />
+              {inquiry.email && (
+                <a href={`mailto:${inquiry.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors">
+                  <Mail className="w-4 h-4" />
+                  <span>{inquiry.email}</span>
+                </a>
+              )}
+              {inquiry.instagram && (
+                <a
+                  href={`https://instagram.com/${inquiry.instagram.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-gold hover:underline"
+                >
+                  <Instagram className="w-4 h-4" />
+                  <span>@{inquiry.instagram.replace(/^@/, '')}</span>
+                </a>
+              )}
+              {inquiry.party_size && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>{inquiry.party_size} people</span>
+                </div>
+              )}
+              {inquiry.budget && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <DollarSign className="w-4 h-4" />
+                  <span>{inquiry.budget}</span>
+                </div>
+              )}
+              {inquiry.target_date && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>{inquiry.target_date}</span>
+                </div>
+              )}
+              {inquiry.venue_preference && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="w-4 h-4" />
+                  <span>{inquiry.venue_preference}</span>
+                </div>
+              )}
+              {inquiry.celebration_type && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Sparkles className="w-4 h-4" />
+                  <span>
+                    {inquiry.celebration_type === 'Other' ? inquiry.celebration_other : inquiry.celebration_type}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {inquiry.notes && (
+              <div className="mt-3 p-3 bg-muted rounded-lg">
+                <div className="flex items-start gap-2 text-sm">
+                  <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <p className="text-muted-foreground">{inquiry.notes}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="text-right text-xs text-muted-foreground shrink-0">
+            <p>Requested</p>
+            <p>{format(new Date(inquiry.created_at), 'MMM d, h:mm a')}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Phone number with one-tap call and text actions -- the actual point of
+// capturing a lead is being able to reach them without retyping the number.
+function ContactPhone({ phone }: { phone: string }) {
+  const digits = phone.replace(/\D/g, '')
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex items-center gap-2 text-muted-foreground">
+        <Phone className="w-4 h-4" />
+        {formatPhone(phone)}
+      </span>
+      <a
+        href={`sms:${digits}`}
+        className="flex items-center gap-1 text-gold hover:underline"
+        title="Text this guest"
+      >
+        <MessageCircle className="w-3.5 h-3.5" />
+        Text
+      </a>
+      <a href={`tel:${digits}`} className="flex items-center gap-1 text-gold hover:underline" title="Call this guest">
+        <Phone className="w-3.5 h-3.5" />
+        Call
+      </a>
+    </div>
+  )
+}
+
 function InquiryExportButton({ inquiries }: { inquiries: VipInquiry[] }) {
   const exportCSV = () => {
     const headers = [
@@ -234,6 +288,7 @@ function InquiryExportButton({ inquiries }: { inquiries: VipInquiry[] }) {
       'Budget',
       'Venue Preference',
       'Out of Town',
+      'Celebration',
       'Notes',
       'Requested At',
     ]
@@ -248,6 +303,7 @@ function InquiryExportButton({ inquiries }: { inquiries: VipInquiry[] }) {
       inq.budget || '',
       inq.venue_preference || '',
       inq.out_of_town ? 'Yes' : 'No',
+      inq.celebration_type === 'Other' ? inq.celebration_other || '' : inq.celebration_type || '',
       inq.notes || '',
       format(new Date(inq.created_at), 'yyyy-MM-dd HH:mm'),
     ])

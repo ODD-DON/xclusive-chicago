@@ -17,11 +17,18 @@ export async function POST(request: NextRequest) {
       budget,
       venuePreference,
       outOfTown,
+      celebrationType,
+      celebrationOther,
+      smsConsent,
       notes,
     } = body
 
-    if (!firstName || !lastName || !phone) {
+    if (!firstName || !lastName || !phone || !instagram) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!smsConsent) {
+      return NextResponse.json({ error: 'SMS consent is required' }, { status: 400 })
     }
 
     const cleanPhone = String(phone).replace(/\D/g, '')
@@ -31,22 +38,29 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    const { error } = await supabase.from('xc_vip_inquiries').insert({
-      app_id: APP_ID,
-      first_name: String(firstName).trim(),
-      last_name: String(lastName).trim(),
-      phone: cleanPhone,
-      email: email || null,
-      instagram: instagram ? String(instagram).trim().replace(/^@/, '') : null,
-      target_date: targetDate || null,
-      party_size: partySize ? parseInt(partySize, 10) : null,
-      budget: budget || null,
-      venue_preference: venuePreference || null,
-      out_of_town: !!outOfTown,
-      notes: notes || null,
-    })
+    const { data: inquiry, error } = await supabase
+      .from('xc_vip_inquiries')
+      .insert({
+        app_id: APP_ID,
+        first_name: String(firstName).trim(),
+        last_name: String(lastName).trim(),
+        phone: cleanPhone,
+        email: email || null,
+        instagram: String(instagram).trim().replace(/^@/, ''),
+        target_date: targetDate || null,
+        party_size: partySize ? parseInt(partySize, 10) : null,
+        budget: budget || null,
+        venue_preference: venuePreference || null,
+        out_of_town: !!outOfTown,
+        celebration_type: celebrationType || null,
+        celebration_other: celebrationOther || null,
+        sms_consent: !!smsConsent,
+        notes: notes || null,
+      })
+      .select('id')
+      .single()
 
-    if (error) {
+    if (error || !inquiry) {
       console.error('VIP inquiry error:', error)
       return NextResponse.json({ error: 'Failed to submit your inquiry' }, { status: 500 })
     }
@@ -63,7 +77,7 @@ export async function POST(request: NextRequest) {
       body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)}${
         details.length ? ` · ${details.join(', ')}` : ''
       }`,
-      url: '/admin/vip',
+      url: `/admin/vip?inquiry=${inquiry.id}`,
     })
 
     return NextResponse.json({ success: true })

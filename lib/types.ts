@@ -204,6 +204,9 @@ export interface VipInquiry {
   budget: string | null
   venue_preference: string | null
   out_of_town: boolean
+  celebration_type: string | null
+  celebration_other: string | null
+  sms_consent: boolean
   notes: string | null
   status: string
   created_at: string

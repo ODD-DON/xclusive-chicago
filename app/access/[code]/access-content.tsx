@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
-import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy } from 'lucide-react'
+import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
@@ -37,17 +37,41 @@ export function AccessContent({ accessRequest }: Props) {
   const rsvpUrl = event?.ticket_url ? buildRsvpUrl(event.ticket_url, member) : null
   const [copied, setCopied] = useState(false)
 
+  const groupLink = event ? `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}` : ''
+  const inviteMessage = event
+    ? `Hey! I got us free access to ${club?.name || event.title} in Chicago — just need you all to request your own access so we can all get in. ${groupLink}`
+    : ''
+
   const copyGroupLink = async () => {
     if (!event) return
-    const url = `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}`
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(groupLink)
       setCopied(true)
       toast.success('Link copied. Send it to your group.')
       setTimeout(() => setCopied(false), 2000)
     } catch {
       toast.error('Could not copy link')
     }
+  }
+
+  const shareInvite = async () => {
+    if (!event) return
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: inviteMessage })
+        return
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return
+        // fall through to sms/copy fallback below
+      }
+    }
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const smsSeparator = isIOS ? '&' : '?'
+    const smsUrl = `sms:${smsSeparator}body=${encodeURIComponent(inviteMessage)}`
+    const win = window.open(smsUrl, '_self')
+    if (!win) await copyGroupLink()
   }
 
   useEffect(() => {
@@ -178,15 +202,25 @@ export function AccessContent({ accessRequest }: Props) {
                       can request their own access — we&apos;ll know you&apos;re together.
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-gold/30 text-gold hover:bg-gold/10"
-                    onClick={copyGroupLink}
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    {copied ? 'Link Copied' : 'Copy Invite Link'}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      className="w-full bg-gold hover:bg-gold-light text-background"
+                      onClick={shareInvite}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Text Your Group
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-gold/30 text-gold hover:bg-gold/10"
+                      onClick={copyGroupLink}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      {copied ? 'Link Copied' : 'Copy Invite Link'}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

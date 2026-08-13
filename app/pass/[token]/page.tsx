@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { notFound } from 'next/navigation'
 import { PassContent } from './pass-content'
@@ -10,7 +10,7 @@ interface Props {
 export default async function PassPage({ params }: Props) {
   const { token } = await params
 
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: registration, error } = await supabase
     .from('xc_registrations')

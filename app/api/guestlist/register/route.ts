@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { nanoid } from 'nanoid'
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     // Generate unique pass token
     const passToken = nanoid(12)

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-
-const APP_ID = 'xclusive_chicago'
+import { createServiceClient } from '@/lib/supabase/service'
+import { APP_ID } from '@/lib/types'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     const {
       experienceType,

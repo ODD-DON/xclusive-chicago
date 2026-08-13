@@ -1,9 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID, Club } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
 import { ClubsContent } from './clubs-content'
 
 async function getClubs() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: clubs, error } = await supabase
     .from('xc_clubs')

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 
 export async function POST(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing pass token' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     // Get registration
     const { data: registration, error: fetchError } = await supabase

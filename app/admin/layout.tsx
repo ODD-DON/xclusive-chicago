@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -14,8 +14,10 @@ import {
   Menu,
   X,
   ChevronRight,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,7 +33,19 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/admin/login')
+    router.refresh()
+  }
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,6 +119,13 @@ export default function AdminLayout({
                     )}
                   </Link>
                 ))}
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all w-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>Log out</span>
+                </button>
               </nav>
             </motion.aside>
           </>
@@ -141,13 +162,20 @@ export default function AdminLayout({
               </Link>
             ))}
           </nav>
-          <div className="p-4 border-t border-border/30">
+          <div className="p-4 border-t border-border/30 space-y-2">
             <Link
               href="/"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               View public site
             </Link>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Log out
+            </button>
           </div>
         </aside>
 

@@ -1,12 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
 import { format, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { Building2, Calendar, Users, Wine, CheckCircle2, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 
 async function getStats() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const today = new Date()
   const todayStr = format(today, 'yyyy-MM-dd')
   

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { format, addDays, getDay } from 'date-fns'
 
 export async function POST() {
   try {
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     // Get all active clubs with recurring days
     const { data: clubs, error: clubsError } = await supabase

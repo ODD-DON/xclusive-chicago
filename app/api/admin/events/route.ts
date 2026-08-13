@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     const { data, error } = await supabase
       .from('xc_events')
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing event ID' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     const { error } = await supabase
       .from('xc_events')
@@ -70,7 +70,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Missing event ID' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     const { error } = await supabase
       .from('xc_events')

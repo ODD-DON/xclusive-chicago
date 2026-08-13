@@ -1,10 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { format, subDays, addDays } from 'date-fns'
+
+export const dynamic = 'force-dynamic'
 import { GuestsContent } from './guests-content'
 
 async function getData() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const today = new Date()
   
   // Get date range (past 7 days to future 14 days)

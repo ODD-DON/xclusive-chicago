@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { redirect } from 'next/navigation'
 import { ConfirmationContent } from './confirmation-content'
@@ -16,7 +16,7 @@ export default async function ConfirmedPage({ searchParams }: Props) {
     redirect('/guestlist')
   }
 
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: registration, error } = await supabase
     .from('xc_registrations')

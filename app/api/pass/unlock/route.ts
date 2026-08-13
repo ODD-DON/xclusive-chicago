@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 
 // Calculate distance between two coordinates using Haversine formula
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing pass token' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     // Get registration with club info
     const { data: registration, error: fetchError } = await supabase

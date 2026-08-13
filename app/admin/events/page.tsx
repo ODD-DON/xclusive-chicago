@@ -1,10 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { format, addDays } from 'date-fns'
+
+export const dynamic = 'force-dynamic'
 import { EventsContent } from './events-content'
 
 async function getData() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const today = new Date()
   const todayStr = format(today, 'yyyy-MM-dd')
   const futureStr = format(addDays(today, 56), 'yyyy-MM-dd')

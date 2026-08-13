@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID, Event, Club } from '@/lib/types'
 import { GuestlistFlow } from './guestlist-flow'
 
 // Auto-generate events for clubs that are missing them in the next 2 weeks
 async function ensureEventsExist() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -82,7 +82,7 @@ async function ensureEventsExist() {
 }
 
 async function getAvailableEvents() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   // First, ensure events exist for the next 2 weeks
   await ensureEventsExist()

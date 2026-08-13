@@ -148,7 +148,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
               </h2>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {events.map((event, index) => {
                 const dateObj = parseISO(event.event_date)
                 const isToday = isSameDay(dateObj, new Date())

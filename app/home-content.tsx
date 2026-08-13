@@ -1,16 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
 import { ArrowRight, Bus, Ship, Wine, Calendar, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Spinner } from '@/components/ui/spinner'
-import { toast } from 'sonner'
 import { Event, Club } from '@/lib/types'
 import { computeAccessStatus, ACCESS_STATUS_LABELS } from '@/lib/access-status'
 
@@ -99,15 +94,6 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <a href="#join">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-gold/40 text-gold hover:bg-gold/10 font-medium text-lg px-10 py-6 rounded-full transition-all duration-300"
-              >
-                Join Xclusive
-              </Button>
-            </a>
           </motion.div>
 
           <motion.div
@@ -199,8 +185,6 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
         </section>
       )}
 
-      <JoinListSection />
-
       <section className="relative z-10 py-20 px-4 bg-background/95 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto">
           <motion.div
@@ -283,112 +267,3 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
   )
 }
 
-function JoinListSection() {
-  const [firstName, setFirstName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
-  const [smsConsent, setSmsConsent] = useState(false)
-  const [emailConsent, setEmailConsent] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [joined, setJoined] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!firstName.trim() || !phone.replace(/\D/g, '').match(/^\d{10,}$/)) {
-      toast.error('Enter your name and a valid phone number')
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      const response = await fetch('/api/members/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          phone,
-          email: email.trim() || null,
-          smsConsent,
-          emailConsent,
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to join')
-
-      setJoined(true)
-    } catch {
-      toast.error('Something went wrong. Try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <section id="join" className="relative z-10 py-20 px-4 bg-background border-t border-border/30">
-      <div className="max-w-lg mx-auto text-center">
-        <p className="text-gold text-sm tracking-[0.2em] uppercase mb-3">Member Access</p>
-        <h2 className="text-2xl md:text-3xl font-light mb-3">
-          Get On <span className="text-gold-gradient font-medium">The List</span>
-        </h2>
-        <p className="text-muted-foreground mb-8">
-          First access to new drops, before they go public.
-        </p>
-
-        {joined ? (
-          <div className="bg-card border border-gold/30 rounded-2xl p-6">
-            <p className="font-medium text-gold mb-1">You&apos;re on the list</p>
-            <p className="text-sm text-muted-foreground">
-              Watch for Xclusive Access drops. Explore what&apos;s open right now on the Access page.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-3 text-left">
-            <Input
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="First name"
-              className="bg-muted border-border/50"
-            />
-            <Input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone"
-              className="bg-muted border-border/50"
-            />
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email (optional)"
-              className="bg-muted border-border/50"
-            />
-            <div className="space-y-2 pt-1">
-              <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                <Checkbox checked={smsConsent} onCheckedChange={(v) => setSmsConsent(!!v)} className="mt-0.5" />
-                <span>Text me about future Xclusive releases and access updates.</span>
-              </label>
-              <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                <Checkbox checked={emailConsent} onCheckedChange={(v) => setEmailConsent(!!v)} className="mt-0.5" />
-                <span>Email me about future Xclusive releases and access updates.</span>
-              </label>
-              <p className="text-[11px] text-muted-foreground/70">
-                Msg &amp; data rates may apply. Msg frequency varies. Reply STOP to opt out.{' '}
-                <Link href="/privacy" target="_blank" className="text-gold hover:underline">Privacy Policy</Link>
-                {' | '}
-                <Link href="/terms-and-conditions" target="_blank" className="text-gold hover:underline">Terms</Link>
-              </p>
-            </div>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gold hover:bg-gold-light text-background font-medium py-6 rounded-full"
-            >
-              {isSubmitting ? <Spinner className="w-4 h-4" /> : 'Join Xclusive'}
-            </Button>
-          </form>
-        )}
-      </div>
-    </section>
-  )
-}

@@ -39,7 +39,7 @@ export function AccessContent({ accessRequest }: Props) {
 
   const groupLink = event ? `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}` : ''
   const inviteMessage = event
-    ? `Hey! I got us free access to ${club?.name || event.title} in Chicago — just need you all to request your own access so we can all get in. ${groupLink}`
+    ? `Hey guys, I got us complimentary access to ${club?.name || event.title} in Chicago. Just request access through my link so we can all get on the list together: ${groupLink}`
     : ''
 
   const copyGroupLink = async () => {

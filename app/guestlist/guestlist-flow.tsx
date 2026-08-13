@@ -146,7 +146,7 @@ export function EventFeed({ events }: EventFeedProps) {
                       {ticketUrl ? (
                         <Button asChild className="flex-1 bg-gold hover:bg-gold-light text-background">
                           <a href={ticketUrl} target="_blank" rel="noreferrer">
-                            Get Tickets
+                            Join Our Guestlist
                             <ExternalLink className="w-4 h-4 ml-2" />
                           </a>
                         </Button>

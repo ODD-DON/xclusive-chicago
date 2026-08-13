@@ -1,24 +1,49 @@
-import "./globals.css"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import type React from "react"
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
+import './globals.css'
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
-  title: "Xclusive Chicago",
-  description: "Experience Luxury. Experience Chicago.",
+  title: 'XCLUSIVE Chicago | Premium Guest List',
+  description: 'Skip the line. Join the exclusive guest list for Chicago\'s hottest nightclubs.',
+  generator: 'v0.app',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
+  openGraph: {
+    title: 'XCLUSIVE Chicago | Premium Guest List',
+    description: 'Skip the line. Join the exclusive guest list for Chicago\'s hottest nightclubs.',
+    images: ['/logo.png'],
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className="dark bg-background">
+      <body className={`${inter.variable} font-sans antialiased min-h-screen`}>
+        {children}
+        <Toaster richColors position="top-center" />
+        {process.env.NODE_ENV === 'production' && <Analytics />}
+      </body>
     </html>
   )
 }
-

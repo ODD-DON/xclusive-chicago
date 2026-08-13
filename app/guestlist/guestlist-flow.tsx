@@ -201,6 +201,23 @@ export function EventFeed({ events, approvedCounts }: EventFeedProps) {
             })}
           </div>
         )}
+
+        <div className="mt-10 pt-6 border-t border-border/30 text-xs text-muted-foreground leading-relaxed space-y-2">
+          <p className="font-medium text-foreground">SMS Consent</p>
+          <p>
+            When you tap Request Access on an event above, the form asks for your phone number and includes an
+            unchecked box reading &quot;I agree to receive SMS updates from Xclusive Chicago.&quot; You must actively
+            check this box before you can continue. By checking it and submitting your phone number, you agree to
+            receive SMS messages from Xclusive Chicago related to your access request, confirmations, and event
+            updates. Message frequency may vary. Message &amp; data rates may apply. Reply STOP to opt out, HELP for
+            help.
+          </p>
+          <p>
+            <Link href="/privacy" className="text-gold hover:underline">Privacy Policy</Link>
+            {' | '}
+            <Link href="/terms-and-conditions" className="text-gold hover:underline">Terms &amp; Conditions</Link>
+          </p>
+        </div>
       </div>
 
       <RequestAccessDialog event={accessEvent} onClose={() => setAccessEvent(null)} />

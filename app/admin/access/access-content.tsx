@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
-import { Check, X, Clock, Users, Phone, Mail } from 'lucide-react'
+import { Check, X, Clock, Users, Phone, Mail, Instagram } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +14,29 @@ import type { AccessRequest, Member } from '@/lib/types'
 interface AccessContentProps {
   accessRequests: AccessRequest[]
   members: Member[]
+}
+
+// Clusters requests that share an invite link (referred_by_code) together,
+// leader first then followers by request time, groups ordered by most recent activity.
+function groupRequests(list: AccessRequest[]): AccessRequest[][] {
+  const clusters = new Map<string, AccessRequest[]>()
+  list.forEach((r) => {
+    const key = r.referred_by_code || r.access_code
+    if (!clusters.has(key)) clusters.set(key, [])
+    clusters.get(key)!.push(r)
+  })
+
+  const groups = Array.from(clusters.values()).map((members) =>
+    [...members].sort((a, b) => new Date(a.requested_at).getTime() - new Date(b.requested_at).getTime()),
+  )
+
+  groups.sort((a, b) => {
+    const aMax = Math.max(...a.map((m) => new Date(m.requested_at).getTime()))
+    const bMax = Math.max(...b.map((m) => new Date(m.requested_at).getTime()))
+    return bMax - aMax
+  })
+
+  return groups
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -90,59 +113,85 @@ export function AccessContent({ accessRequests: initialRequests, members }: Acce
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {visibleRequests.map((req) => (
-                <Card key={req.id} className="bg-card border-border/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-medium">
-                            {req.member?.first_name} {req.member?.last_name}
-                          </h3>
-                          <Badge className={`${STATUS_STYLES[req.status]} border-0`}>{req.status}</Badge>
-                        </div>
-                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5" />
-                            <span>{formatPhone(req.member?.phone || '')}</span>
-                          </div>
-                          {req.member?.email && (
-                            <div className="flex items-center gap-1.5">
-                              <Mail className="w-3.5 h-3.5" />
-                              <span>{req.member.email}</span>
+            <div className="space-y-4">
+              {groupRequests(visibleRequests).map((group) => (
+                <div
+                  key={group[0].id}
+                  className={group.length > 1 ? 'space-y-2 border-l-2 border-gold/40 pl-3' : ''}
+                >
+                  {group.length > 1 && (
+                    <p className="text-xs font-medium text-gold flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Group of {group.length}
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    {group.map((req) => (
+                      <Card key={req.id} className="bg-card border-border/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-medium">
+                                  {req.member?.first_name} {req.member?.last_name}
+                                </h3>
+                                <Badge className={`${STATUS_STYLES[req.status]} border-0`}>{req.status}</Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <Phone className="w-3.5 h-3.5" />
+                                  <span>{formatPhone(req.member?.phone || '')}</span>
+                                </div>
+                                {req.member?.email && (
+                                  <div className="flex items-center gap-1.5">
+                                    <Mail className="w-3.5 h-3.5" />
+                                    <span>{req.member.email}</span>
+                                  </div>
+                                )}
+                                {req.member?.instagram && (
+                                  <a
+                                    href={`https://instagram.com/${req.member.instagram.replace(/^@/, '')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1.5 text-gold hover:underline"
+                                  >
+                                    <Instagram className="w-3.5 h-3.5" />
+                                    <span>@{req.member.instagram.replace(/^@/, '')}</span>
+                                  </a>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                  <Users className="w-3.5 h-3.5" />
+                                  <span>{req.guest_count} {req.guest_count === 1 ? 'guest' : 'guests'}</span>
+                                </div>
+                              </div>
+                              <p className="text-sm">
+                                {req.event?.title} &middot; {req.event?.club?.name}
+                                {req.event?.event_date && ` · ${format(parseISO(req.event.event_date), 'MMM d')}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Requested {format(new Date(req.requested_at), 'MMM d, h:mm a')}
+                              </p>
                             </div>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{req.guest_count} {req.guest_count === 1 ? 'guest' : 'guests'}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm">
-                          {req.event?.title} &middot; {req.event?.club?.name}
-                          {req.event?.event_date && ` · ${format(parseISO(req.event.event_date), 'MMM d')}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          Requested {format(new Date(req.requested_at), 'MMM d, h:mm a')}
-                        </p>
-                      </div>
 
-                      {req.status === 'pending' && (
-                        <div className="flex gap-2 shrink-0">
-                          <Button size="sm" onClick={() => updateStatus(req.id, 'approved')} className="bg-green-600 hover:bg-green-700 text-white">
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => updateStatus(req.id, 'denied')}>
-                            <X className="w-4 h-4 mr-1" />
-                            Deny
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                            {req.status === 'pending' && (
+                              <div className="flex gap-2 shrink-0">
+                                <Button size="sm" onClick={() => updateStatus(req.id, 'approved')} className="bg-green-600 hover:bg-green-700 text-white">
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => updateStatus(req.id, 'denied')}>
+                                  <X className="w-4 h-4 mr-1" />
+                                  Deny
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

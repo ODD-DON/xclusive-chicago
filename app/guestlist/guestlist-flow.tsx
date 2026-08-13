@@ -24,9 +24,10 @@ import { computeAccessStatus, remainingPasses, ctaLabelForStatus, ACCESS_STATUS_
 interface EventFeedProps {
   events: (Event & { club: Club | null })[]
   approvedCounts: Record<string, number>
+  referredBy?: string | null
 }
 
-export function EventFeed({ events, approvedCounts }: EventFeedProps) {
+export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps) {
   const [accessEvent, setAccessEvent] = useState<(Event & { club: Club | null }) | null>(null)
 
   return (
@@ -194,7 +195,7 @@ export function EventFeed({ events, approvedCounts }: EventFeedProps) {
         </div>
       </div>
 
-      <RequestAccessDialog event={accessEvent} onClose={() => setAccessEvent(null)} />
+      <RequestAccessDialog event={accessEvent} onClose={() => setAccessEvent(null)} referredBy={referredBy} />
     </main>
   )
 }
@@ -220,9 +221,11 @@ function StatusBadge({ status }: { status: ReturnType<typeof computeAccessStatus
 function RequestAccessDialog({
   event,
   onClose,
+  referredBy,
 }: {
   event: (Event & { club: Club | null }) | null
   onClose: () => void
+  referredBy?: string | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -264,15 +267,6 @@ function RequestAccessDialog({
     setBottleBudget('')
     setInterestBoat(false)
     setInterestPartyBus(false)
-  }
-
-  const copyShareLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href)
-      toast.success('Link copied. Send it to your group.')
-    } catch {
-      toast.error('Could not copy link')
-    }
   }
 
   const handleClose = () => {
@@ -334,6 +328,7 @@ function RequestAccessDialog({
           bottleBudget: bottleServiceInterest ? bottleBudget || null : null,
           interestBoat,
           interestPartyBus,
+          referredBy: referredBy || null,
         }),
       })
 
@@ -428,20 +423,12 @@ function RequestAccessDialog({
                       </button>
                     </div>
                     {parseInt(guestCount, 10) > 1 && (
-                      <div className="flex items-start justify-between gap-2 bg-gold/10 border border-gold/20 rounded-lg p-3">
+                      <div className="bg-gold/10 border border-gold/20 rounded-lg p-3">
                         <p className="text-xs text-muted-foreground">
                           Access is granted per person. For the fastest approval, have everyone in your group
-                          request their own access instead of one person requesting for the group.
+                          request their own access instead of one person requesting for the group — you&apos;ll get
+                          a link to share with them once you submit.
                         </p>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="shrink-0 text-gold h-auto py-1 px-2 text-xs"
-                          onClick={copyShareLink}
-                        >
-                          Copy Link
-                        </Button>
                       </div>
                     )}
                   </div>
@@ -582,7 +569,7 @@ function RequestAccessDialog({
                     <div className="space-y-2">
                       <Label>Budget for bottle service (optional)</Label>
                       <div className="grid grid-cols-2 gap-2">
-                        {['$300-500', '$500-1000', '$1000-2000', '$2000+'].map((range) => (
+                        {['$500-1000', '$1000-2500', '$2500-5000', '$5000+'].map((range) => (
                           <button
                             key={range}
                             type="button"

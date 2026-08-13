@@ -124,6 +124,7 @@ export interface AccessRequest {
   bottle_service_interest: boolean
   interest_boat: boolean
   interest_party_bus: boolean
+  referred_by_code: string | null
   member?: Member
   event?: Event & { club: Club | null }
 }

@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       bottleBudget,
       interestBoat,
       interestPartyBus,
+      referredBy,
     } = body
 
     if (!eventId || !firstName || !lastName || !phone || !instagram) {
@@ -100,6 +101,17 @@ export async function POST(request: NextRequest) {
 
     const accessCode = nanoid(10)
 
+    let referredByCode: string | null = null
+    if (referredBy && typeof referredBy === 'string') {
+      const { data: referrer } = await supabase
+        .from('xc_access_requests')
+        .select('access_code')
+        .eq('event_id', eventId)
+        .eq('access_code', referredBy)
+        .maybeSingle()
+      referredByCode = referrer?.access_code || null
+    }
+
     const { error: requestError } = await supabase.from('xc_access_requests').insert({
       app_id: APP_ID,
       member_id: member.id,
@@ -113,6 +125,7 @@ export async function POST(request: NextRequest) {
       bottle_service_interest: !!bottleServiceInterest,
       interest_boat: !!interestBoat,
       interest_party_bus: !!interestPartyBus,
+      referred_by_code: referredByCode,
     })
 
     if (requestError) {

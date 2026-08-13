@@ -49,7 +49,12 @@ async function getUpcomingEvents() {
   }
 }
 
-export default async function GuestlistPage() {
+interface Props {
+  searchParams: Promise<{ ref?: string }>
+}
+
+export default async function GuestlistPage({ searchParams }: Props) {
   const { events, approvedCounts } = await getUpcomingEvents()
-  return <EventFeed events={events} approvedCounts={approvedCounts} />
+  const { ref } = await searchParams
+  return <EventFeed events={events} approvedCounts={approvedCounts} referredBy={ref || null} />
 }

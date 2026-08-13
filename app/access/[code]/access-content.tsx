@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
-import { Check, Clock, Calendar, MapPin, ArrowLeft } from 'lucide-react'
+import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
 import confetti from 'canvas-confetti'
 
@@ -31,9 +32,23 @@ function buildRsvpUrl(baseUrl: string, member: AccessRequest['member']): string 
 }
 
 export function AccessContent({ accessRequest }: Props) {
-  const { status, member, event, access_code } = accessRequest
+  const { status, member, event, access_code, guest_count } = accessRequest
   const club = event?.club
   const rsvpUrl = event?.ticket_url ? buildRsvpUrl(event.ticket_url, member) : null
+  const [copied, setCopied] = useState(false)
+
+  const copyGroupLink = async () => {
+    if (!event) return
+    const url = `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      toast.success('Link copied. Send it to your group.')
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error('Could not copy link')
+    }
+  }
 
   useEffect(() => {
     if (status !== 'approved') return
@@ -150,6 +165,27 @@ export function AccessContent({ accessRequest }: Props) {
                     <a href={rsvpUrl} target="_blank" rel="noreferrer">
                       Complete Venue RSVP
                     </a>
+                  </Button>
+                </div>
+              )}
+
+              {guest_count > 1 && status !== 'denied' && (
+                <div className="pt-2 border-t border-border/30 mt-2">
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground mb-2">
+                    <Users className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <p>
+                      Access is granted per person. Share this link so the rest of your group ({guest_count - 1} more)
+                      can request their own access — we&apos;ll know you&apos;re together.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-gold/30 text-gold hover:bg-gold/10"
+                    onClick={copyGroupLink}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    {copied ? 'Link Copied' : 'Copy Invite Link'}
                   </Button>
                 </div>
               )}

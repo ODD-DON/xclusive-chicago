@@ -349,7 +349,7 @@ function RequestAccessDialog({
 
   return (
     <Dialog open={!!event} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Request Xclusive Access</DialogTitle>
         </DialogHeader>

@@ -459,10 +459,6 @@ function RequestAccessDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Email (optional)</Label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted border-border/50" />
-                  </div>
-                  <div className="space-y-2">
                     <Label>Instagram</Label>
                     <Input
                       value={instagram}
@@ -470,6 +466,10 @@ function RequestAccessDialog({
                       placeholder="@yourhandle"
                       className="bg-muted border-border/50"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email (optional)</Label>
+                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted border-border/50" />
                   </div>
 
                   <label className="flex items-start gap-3 cursor-pointer group p-3 -mx-3 rounded-lg hover:bg-muted/30 active:bg-muted/50 transition-colors">

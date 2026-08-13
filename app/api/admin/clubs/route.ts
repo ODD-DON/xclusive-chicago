@@ -40,46 +40,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create club' }, { status: 500 })
     }
 
-    // Auto-generate events for the next 2 weeks (Thu-Sat)
-    if (data && body.recurring_days && body.recurring_days.length > 0) {
-      const today = new Date()
-      const twoWeeksOut = new Date(today)
-      twoWeeksOut.setDate(today.getDate() + 14)
-
-      const eventsToCreate = []
-      const currentDate = new Date(today)
-      
-      while (currentDate <= twoWeeksOut) {
-        const dayOfWeek = currentDate.getDay() // 0=Sun, 4=Thu, 5=Fri, 6=Sat
-        
-        // Only create events for Thu (4), Fri (5), Sat (6) if they're in recurring_days
-        if (body.recurring_days.includes(dayOfWeek) && [4, 5, 6].includes(dayOfWeek)) {
-          eventsToCreate.push({
-            app_id: APP_ID,
-            club_id: data.id,
-            event_date: currentDate.toISOString().split('T')[0],
-            unlock_time: body.default_unlock_time || '18:00:00',
-            cutoff_time: body.default_cutoff_time || '23:59:00',
-            is_active: true,
-            guestlist_status: 'confirmed',
-          })
-        }
-        
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-
-      if (eventsToCreate.length > 0) {
-        const { error: eventsError } = await supabase
-          .from('xc_events')
-          .insert(eventsToCreate)
-
-        if (eventsError) {
-          console.error('[v0] Auto-generate events error:', eventsError)
-          // Don't fail the club creation, just log the error
-        }
-      }
-    }
-
     return NextResponse.json({ success: true, club: data })
   } catch (error) {
     console.error('[v0] API error:', error)

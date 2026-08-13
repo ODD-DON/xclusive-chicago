@@ -10,20 +10,12 @@ import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, M
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Event, Club, CELEBRATION_TYPES } from '@/lib/types'
@@ -35,7 +27,6 @@ interface EventFeedProps {
 }
 
 export function EventFeed({ events, approvedCounts }: EventFeedProps) {
-  const [vipEvent, setVipEvent] = useState<(Event & { club: Club | null }) | null>(null)
   const [accessEvent, setAccessEvent] = useState<(Event & { club: Club | null }) | null>(null)
 
   return (
@@ -177,23 +168,6 @@ export function EventFeed({ events, approvedCounts }: EventFeedProps) {
                       >
                         {ctaLabelForStatus(status)}
                       </Button>
-                      {event.tables_url ? (
-                        <Button asChild variant="outline" className="flex-1 border-gold/30 text-gold hover:bg-gold/10">
-                          <a href={event.tables_url} target="_blank" rel="noreferrer">
-                            <Wine className="w-4 h-4 mr-2" />
-                            Bottle Service
-                          </a>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          className="flex-1 border-gold/30 text-gold hover:bg-gold/10"
-                          onClick={() => setVipEvent(event)}
-                        >
-                          <Wine className="w-4 h-4 mr-2" />
-                          Bottle Service
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -221,7 +195,6 @@ export function EventFeed({ events, approvedCounts }: EventFeedProps) {
       </div>
 
       <RequestAccessDialog event={accessEvent} onClose={() => setAccessEvent(null)} />
-      <VipRequestDialog event={vipEvent} onClose={() => setVipEvent(null)} />
     </main>
   )
 }
@@ -641,144 +614,6 @@ function StepHeading({ title, subtitle }: { title: string; subtitle: string }) {
       <h3 className="text-lg font-medium">{title}</h3>
       <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
     </div>
-  )
-}
-
-function VipRequestDialog({
-  event,
-  onClose,
-}: {
-  event: (Event & { club: Club | null }) | null
-  onClose: () => void
-}) {
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [groupSize, setGroupSize] = useState('4')
-  const [budget, setBudget] = useState('')
-  const [notes, setNotes] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-
-  const reset = () => {
-    setName('')
-    setPhone('')
-    setGroupSize('4')
-    setBudget('')
-    setNotes('')
-    setSubmitted(false)
-  }
-
-  const handleClose = () => {
-    onClose()
-    setTimeout(reset, 200)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!event) return
-
-    if (!name.trim() || !phone.replace(/\D/g, '').match(/^\d{10,}$/)) {
-      toast.error('Enter your name and a valid phone number')
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      const response = await fetch('/api/vip/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: event.id,
-          name: name.trim(),
-          phone,
-          groupSize: parseInt(groupSize, 10),
-          budget,
-          notes,
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to submit')
-
-      setSubmitted(true)
-    } catch {
-      toast.error('Something went wrong. Try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <Dialog open={!!event} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Bottle Service for {event?.title}</DialogTitle>
-        </DialogHeader>
-
-        {submitted ? (
-          <div className="text-center py-6">
-            <Wine className="w-10 h-10 text-gold mx-auto mb-3" />
-            <p className="font-medium mb-1">Request sent</p>
-            <p className="text-sm text-muted-foreground">We&apos;ll text you shortly to lock it in.</p>
-            <Button className="mt-6 w-full" onClick={handleClose}>
-              Done
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-muted border-border/50" />
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(312) 555-0123"
-                className="bg-muted border-border/50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Group Size</Label>
-              <Select value={groupSize} onValueChange={setGroupSize}>
-                <SelectTrigger className="bg-muted border-border/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 19 }, (_, i) => i + 2).map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n} people
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Budget (optional)</Label>
-              <Select value={budget} onValueChange={setBudget}>
-                <SelectTrigger className="bg-muted border-border/50">
-                  <SelectValue placeholder="Select a range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="$300-500">$300-500</SelectItem>
-                  <SelectItem value="$500-1000">$500-1000</SelectItem>
-                  <SelectItem value="$1000-2000">$1000-2000</SelectItem>
-                  <SelectItem value="$2000+">$2000+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="bg-muted border-border/50" rows={2} />
-            </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full bg-gold hover:bg-gold-light text-background">
-              {isSubmitting ? <Spinner className="w-4 h-4" /> : 'Request Bottle Service'}
-            </Button>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
   )
 }
 

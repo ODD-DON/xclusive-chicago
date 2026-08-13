@@ -56,10 +56,12 @@ interface ReviewForm {
   title: string
   eventDate: string
   eventTime: string
+  cutoffTime: string
   imageUrl: string
   description: string
   clubId: string
   ticketUrl: string
+  tablesUrl: string
   sourceUrl: string
   sourcePlatform: string
   scrapedVenueName: string
@@ -70,10 +72,12 @@ const emptyReviewForm: ReviewForm = {
   title: '',
   eventDate: '',
   eventTime: '',
+  cutoffTime: '',
   imageUrl: '',
   description: '',
   clubId: '',
   ticketUrl: '',
+  tablesUrl: '',
   sourceUrl: '',
   sourcePlatform: '',
   scrapedVenueName: '',
@@ -116,10 +120,12 @@ export function EventsContent({
       title: event.title || '',
       eventDate: event.event_date,
       eventTime: event.unlock_time ? event.unlock_time.slice(0, 5) : '',
+      cutoffTime: event.cutoff_time ? event.cutoff_time.slice(0, 5) : '',
       imageUrl: event.image_url || '',
       description: event.description || '',
       clubId: event.club_id || '',
       ticketUrl: event.ticket_url || '',
+      tablesUrl: event.tables_url || '',
       sourceUrl: event.source_url || '',
       sourcePlatform: event.source_platform || '',
       scrapedVenueName: event.scraped_venue_name || '',
@@ -157,10 +163,12 @@ export function EventsContent({
         title: scraped.name || '',
         eventDate: startDate ? format(startDate, 'yyyy-MM-dd') : '',
         eventTime: startDate ? format(startDate, 'HH:mm') : '',
+        cutoffTime: '',
         imageUrl: scraped.image || '',
         description: scraped.description || '',
         clubId: matchedClubId || '',
         ticketUrl: scraped.ticketUrl || '',
+        tablesUrl: '',
         sourceUrl: scraped.sourceUrl || '',
         sourcePlatform: scraped.sourcePlatform || '',
         scrapedVenueName: scraped.venueName || '',
@@ -190,9 +198,11 @@ export function EventsContent({
       club_id: form.clubId || null,
       event_date: form.eventDate,
       unlock_time: form.eventTime ? `${form.eventTime}:00` : null,
+      cutoff_time: form.cutoffTime ? `${form.cutoffTime}:00` : null,
       image_url: form.imageUrl || null,
       description: form.description || null,
       ticket_url: form.ticketUrl || null,
+      tables_url: form.tablesUrl || null,
       source_url: form.sourceUrl || null,
       source_platform: form.sourcePlatform || null,
       scraped_venue_name: form.scrapedVenueName || null,
@@ -576,6 +586,17 @@ function ReviewFields({
       </div>
 
       <div className="space-y-2">
+        <Label>Free Entry Cutoff (optional)</Label>
+        <Input
+          type="time"
+          value={form.cutoffTime}
+          onChange={(e) => setForm({ ...form, cutoffTime: e.target.value })}
+          className="bg-muted border-border/50"
+        />
+        <p className="text-xs text-muted-foreground">Guests using your link get free entry before this time</p>
+      </div>
+
+      <div className="space-y-2">
         <Label>
           Venue
           {form.scrapedVenueName && !form.clubId && (
@@ -614,6 +635,18 @@ function ReviewFields({
           onChange={(e) => setForm({ ...form, ticketUrl: e.target.value })}
           className="bg-muted border-border/50"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Bottle Service / Tables link (optional)</Label>
+        <Input
+          value={form.tablesUrl}
+          onChange={(e) => setForm({ ...form, tablesUrl: e.target.value })}
+          className="bg-muted border-border/50"
+        />
+        <p className="text-xs text-muted-foreground">
+          If the venue has its own tables/bottle-service booking link, the guest "Bottle Service" button will send guests there instead of the built-in request form
+        </p>
       </div>
 
       <div className="space-y-2">

@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
         source_url: body.source_url || null,
         source_platform: body.source_platform || null,
         ticket_url: body.ticket_url || null,
+        tables_url: body.tables_url || null,
         image_url: body.image_url || null,
         description: body.description || null,
         scraped_venue_name: body.scraped_venue_name || null,

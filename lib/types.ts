@@ -58,6 +58,7 @@ export interface Event {
   source_url: string | null
   source_platform: string | null
   ticket_url: string | null
+  tables_url: string | null
   image_url: string | null
   description: string | null
   scraped_venue_name: string | null

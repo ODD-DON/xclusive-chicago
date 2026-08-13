@@ -50,7 +50,7 @@ export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps
 
       <div className="max-w-2xl mx-auto px-4 py-6 pb-12">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-light mb-2">Current Drops</h1>
+          <h1 className="text-2xl md:text-3xl font-light mb-2">Current Releases</h1>
           <p className="text-muted-foreground">Request access, or reserve bottle service</p>
         </div>
 
@@ -59,7 +59,7 @@ export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps
             <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-gold" />
             </div>
-            <h3 className="text-lg font-medium mb-2">No drops right now</h3>
+            <h3 className="text-lg font-medium mb-2">No releases right now</h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-6">
               New releases are added regularly. Check back soon.
             </p>
@@ -76,7 +76,9 @@ export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps
               const isToday = isSameDay(dateObj, new Date())
               const venueName = event.club?.name || event.scraped_venue_name
               const venueAddress = event.club?.address || event.scraped_venue_address
-              const image = event.image_url || event.club?.image_url
+              const image = event.use_venue_branding
+                ? event.club?.image_url || event.image_url
+                : event.image_url || event.club?.image_url
               const approvedCount = approvedCounts[event.id] || 0
               const status = computeAccessStatus(event, approvedCount)
               const remaining = remainingPasses(event, approvedCount)
@@ -119,7 +121,9 @@ export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps
                   <div className="p-4 space-y-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="text-lg font-semibold">{event.title}</h3>
+                        <h3 className="text-lg font-semibold">
+                          {event.use_venue_branding && venueName ? venueName : event.title}
+                        </h3>
                         <StatusBadge status={status} />
                       </div>
                       {venueName && (
@@ -131,13 +135,13 @@ export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps
                               className="truncate hover:text-gold transition-colors underline-offset-2 hover:underline"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {venueName}
-                              {venueAddress ? ` · ${venueAddress}` : ''}
+                              {event.use_venue_branding ? venueAddress || venueName : venueName}
+                              {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
                             </Link>
                           ) : (
                             <span className="truncate">
-                              {venueName}
-                              {venueAddress ? ` · ${venueAddress}` : ''}
+                              {event.use_venue_branding ? venueAddress || venueName : venueName}
+                              {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
                             </span>
                           )}
                         </div>
@@ -591,7 +595,7 @@ function RequestAccessDialog({
 
               {step === 4 && (
                 <>
-                  <StepHeading title="Stay in the loop?" subtitle="First access to future drops by email. Optional." />
+                  <StepHeading title="Stay in the loop?" subtitle="First access to future releases by email. Optional." />
                   <div className="grid grid-cols-2 gap-2">
                     <UpsellChip icon={Mail} label="Email Updates" active={emailConsent} onClick={() => setEmailConsent((v) => !v)} />
                   </div>

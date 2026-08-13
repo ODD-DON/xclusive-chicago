@@ -25,7 +25,7 @@ async function getCurrentDrops() {
     .limit(6)
 
   if (error) {
-    console.error('Error fetching current drops:', error)
+    console.error('Error fetching current releases:', error)
     return { events: [], approvedCounts: {} }
   }
 

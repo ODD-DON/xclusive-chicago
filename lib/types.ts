@@ -76,6 +76,7 @@ export interface Event {
   member_only: boolean
   vip_only: boolean
   announcement_text: string | null
+  use_venue_branding: boolean
   club?: Club
 }
 

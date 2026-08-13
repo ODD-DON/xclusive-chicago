@@ -77,6 +77,7 @@ interface ReviewForm {
   vipOnly: boolean
   announcementText: string
   accessStatusOverride: string
+  useVenueBranding: boolean
 }
 
 const emptyReviewForm: ReviewForm = {
@@ -102,6 +103,7 @@ const emptyReviewForm: ReviewForm = {
   vipOnly: false,
   announcementText: '',
   accessStatusOverride: '',
+  useVenueBranding: false,
 }
 
 export function EventsContent({
@@ -160,6 +162,7 @@ export function EventsContent({
       vipOnly: !!event.vip_only,
       announcementText: event.announcement_text || '',
       accessStatusOverride: event.access_status_override || '',
+      useVenueBranding: !!event.use_venue_branding,
     })
     setHasFetched(true)
     setEditingEventId(event.id)
@@ -212,6 +215,7 @@ export function EventsContent({
         vipOnly: false,
         announcementText: '',
         accessStatusOverride: '',
+        useVenueBranding: false,
       })
       setHasFetched(true)
       toast.success('Event details pulled in, review before saving')
@@ -255,6 +259,7 @@ export function EventsContent({
       vip_only: form.vipOnly,
       announcement_text: form.announcementText || null,
       access_status_override: form.accessStatusOverride || null,
+      use_venue_branding: form.useVenueBranding,
     }
 
     try {
@@ -429,6 +434,11 @@ export function EventsContent({
                                   <Badge variant="outline" className="text-xs">
                                     {ACCESS_STATUS_LABELS[status]}
                                   </Badge>
+                                  {event.use_venue_branding && (
+                                    <Badge variant="outline" className="text-xs border-gold/30 text-gold">
+                                      Venue Branding
+                                    </Badge>
+                                  )}
                                   {!event.club_id && (
                                     <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded-full flex items-center gap-1">
                                       <AlertTriangle className="w-3 h-3" />
@@ -678,6 +688,29 @@ function ReviewFields({
           </SelectContent>
         </Select>
       </div>
+
+      {selectedClub && (
+        <label className="flex items-start justify-between gap-3 text-sm bg-card border border-border/50 rounded-lg p-3 cursor-pointer">
+          <div>
+            <span className="font-medium">Use Venue Info</span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              For generic recurring nights with no unique flyer. Shows {selectedClub.name}&apos;s cover photo and
+              name instead of this event&apos;s title/image, so the pitch reads as &quot;access to this club&quot;
+              rather than &quot;access to this specific night.&quot;
+            </p>
+          </div>
+          <Switch
+            checked={form.useVenueBranding}
+            onCheckedChange={(v) =>
+              setForm({
+                ...form,
+                useVenueBranding: v,
+                imageUrl: v && selectedClub.image_url ? selectedClub.image_url : form.imageUrl,
+              })
+            }
+          />
+        </label>
+      )}
 
       <div className="space-y-2">
         <Label>Image URL</Label>

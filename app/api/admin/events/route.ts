@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
         member_only: !!body.member_only,
         vip_only: !!body.vip_only,
         announcement_text: body.announcement_text || null,
+        use_venue_branding: !!body.use_venue_branding,
       })
       .select()
       .single()

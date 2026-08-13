@@ -130,7 +130,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
             >
               <p className="text-gold text-sm tracking-[0.2em] uppercase mb-3">Right Now</p>
               <h2 className="text-2xl md:text-3xl font-light">
-                Current <span className="text-gold-gradient font-medium">Drops</span>
+                Current <span className="text-gold-gradient font-medium">Releases</span>
               </h2>
             </motion.div>
 
@@ -139,7 +139,9 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                 const dateObj = parseISO(event.event_date)
                 const isToday = isSameDay(dateObj, new Date())
                 const venueName = event.club?.name || event.scraped_venue_name
-                const image = event.image_url || event.club?.image_url
+                const image = event.use_venue_branding
+                  ? event.club?.image_url || event.image_url
+                  : event.image_url || event.club?.image_url
                 const status = computeAccessStatus(event, approvedCounts[event.id] || 0)
 
                 return (
@@ -165,9 +167,9 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                             {isToday ? 'Tonight' : format(dateObj, 'EEE, MMM d')}
                           </p>
                           <h3 className="font-medium truncate group-hover:text-gold transition-colors">
-                            {event.title}
+                            {event.use_venue_branding && venueName ? venueName : event.title}
                           </h3>
-                          {venueName && (
+                          {venueName && !event.use_venue_branding && (
                             <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                               <MapPin className="w-3 h-3 shrink-0" />
                               {venueName}

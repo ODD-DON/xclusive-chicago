@@ -84,7 +84,7 @@ export function AccessContent({ accessRequest }: Props) {
         <div className="mb-6">
           <Link href="/guestlist" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Back to Drops
+            Back to Releases
           </Link>
         </div>
 

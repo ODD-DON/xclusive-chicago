@@ -38,6 +38,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create club' }, { status: 500 })
     }
 
+    if (body.admin_notes !== undefined) {
+      await supabase
+        .from('xc_club_notes')
+        .upsert({ club_id: data.id, notes: body.admin_notes || null, updated_at: new Date().toISOString() })
+    }
+
     return NextResponse.json({ success: true, club: data })
   } catch (error) {
     console.error('[v0] API error:', error)
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, ...updates } = body
+    const { id, admin_notes, ...updates } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Missing club ID' }, { status: 400 })
@@ -85,6 +91,12 @@ export async function PUT(request: NextRequest) {
     if (error) {
       console.error('Update club error:', error)
       return NextResponse.json({ error: 'Failed to update club' }, { status: 500 })
+    }
+
+    if (admin_notes !== undefined) {
+      await supabase
+        .from('xc_club_notes')
+        .upsert({ club_id: id, notes: admin_notes || null, updated_at: new Date().toISOString() })
     }
 
     return NextResponse.json({ success: true, club: data })

@@ -83,7 +83,7 @@ export function ConfirmationContent({ registration, friendCount = 0 }: Props) {
   const handleShare = async () => {
     const shareData = {
       title: `Join me at ${registration.club.name}!`,
-      text: `I'm on the guest list at ${registration.club.name} on ${format(parseISO(registration.event_date), 'EEEE, MMMM d')}! Get your free pass:`,
+      text: `I'm on the guest list at ${registration.club.name} on ${format(parseISO(registration.event_date), 'EEEE, MMMM d')}! Request your access:`,
       url: inviteUrl,
     }
 
@@ -99,7 +99,7 @@ export function ConfirmationContent({ registration, friendCount = 0 }: Props) {
   }
 
   const handleTextFriends = () => {
-    const message = `I'm on the guest list at ${registration.club.name} on ${format(parseISO(registration.event_date), 'EEEE, MMMM d')}! Get your free pass here: ${inviteUrl}`
+    const message = `I'm on the guest list at ${registration.club.name} on ${format(parseISO(registration.event_date), 'EEEE, MMMM d')}! Request your access here: ${inviteUrl}`
     window.location.href = `sms:?body=${encodeURIComponent(message)}`
   }
 
@@ -191,7 +191,7 @@ export function ConfirmationContent({ registration, friendCount = 0 }: Props) {
                   <Clock className="w-6 h-6 text-gold" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Free Entry Until</p>
+                  <p className="text-sm text-muted-foreground">Complimentary Access Until</p>
                   <p className="font-medium text-gold">
                     {formatTime(registration.event.cutoff_time)}
                   </p>

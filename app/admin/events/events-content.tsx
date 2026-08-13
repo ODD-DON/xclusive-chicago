@@ -45,11 +45,13 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import type { Event, Club } from '@/lib/types'
+import { computeAccessStatus, remainingPasses, ACCESS_STATUS_LABELS } from '@/lib/access-status'
 
 interface EventsContentProps {
   events: (Event & { club: Club | null })[]
   clubs: Club[]
-  registrationCounts: Record<string, number>
+  requestCounts: Record<string, number>
+  approvedCounts: Record<string, number>
 }
 
 interface ReviewForm {
@@ -66,6 +68,15 @@ interface ReviewForm {
   sourcePlatform: string
   scrapedVenueName: string
   scrapedVenueAddress: string
+  allocation: string
+  releaseNumber: string
+  approvalMode: 'auto' | 'manual'
+  waitlistEnabled: boolean
+  featured: boolean
+  memberOnly: boolean
+  vipOnly: boolean
+  announcementText: string
+  accessStatusOverride: string
 }
 
 const emptyReviewForm: ReviewForm = {
@@ -82,12 +93,22 @@ const emptyReviewForm: ReviewForm = {
   sourcePlatform: '',
   scrapedVenueName: '',
   scrapedVenueAddress: '',
+  allocation: '',
+  releaseNumber: '1',
+  approvalMode: 'auto',
+  waitlistEnabled: false,
+  featured: false,
+  memberOnly: false,
+  vipOnly: false,
+  announcementText: '',
+  accessStatusOverride: '',
 }
 
 export function EventsContent({
   events: initialEvents,
   clubs,
-  registrationCounts,
+  requestCounts,
+  approvedCounts,
 }: EventsContentProps) {
   const router = useRouter()
   const [events, setEvents] = useState(initialEvents)
@@ -130,6 +151,15 @@ export function EventsContent({
       sourcePlatform: event.source_platform || '',
       scrapedVenueName: event.scraped_venue_name || '',
       scrapedVenueAddress: event.scraped_venue_address || '',
+      allocation: event.allocation != null ? String(event.allocation) : '',
+      releaseNumber: String(event.release_number || 1),
+      approvalMode: event.approval_mode || 'auto',
+      waitlistEnabled: !!event.waitlist_enabled,
+      featured: !!event.featured,
+      memberOnly: !!event.member_only,
+      vipOnly: !!event.vip_only,
+      announcementText: event.announcement_text || '',
+      accessStatusOverride: event.access_status_override || '',
     })
     setHasFetched(true)
     setEditingEventId(event.id)
@@ -173,9 +203,18 @@ export function EventsContent({
         sourcePlatform: scraped.sourcePlatform || '',
         scrapedVenueName: scraped.venueName || '',
         scrapedVenueAddress: scraped.venueAddress || '',
+        allocation: '',
+        releaseNumber: '1',
+        approvalMode: 'auto',
+        waitlistEnabled: false,
+        featured: false,
+        memberOnly: false,
+        vipOnly: false,
+        announcementText: '',
+        accessStatusOverride: '',
       })
       setHasFetched(true)
-      toast.success('Event details pulled in — review before saving')
+      toast.success('Event details pulled in, review before saving')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to fetch event details')
     } finally {
@@ -207,6 +246,15 @@ export function EventsContent({
       source_platform: form.sourcePlatform || null,
       scraped_venue_name: form.scrapedVenueName || null,
       scraped_venue_address: form.scrapedVenueAddress || null,
+      allocation: form.allocation ? parseInt(form.allocation, 10) : null,
+      release_number: parseInt(form.releaseNumber, 10) || 1,
+      approval_mode: form.approvalMode,
+      waitlist_enabled: form.waitlistEnabled,
+      featured: form.featured,
+      member_only: form.memberOnly,
+      vip_only: form.vipOnly,
+      announcement_text: form.announcementText || null,
+      access_status_override: form.accessStatusOverride || null,
     }
 
     try {
@@ -263,9 +311,9 @@ export function EventsContent({
   }
 
   const deleteEvent = async (event: Event) => {
-    const count = registrationCounts[event.id] || 0
+    const count = requestCounts[event.id] || 0
     if (count > 0) {
-      toast.error(`Cannot delete event with ${count} registrations`)
+      toast.error(`Cannot delete event with ${count} access requests`)
       return
     }
 
@@ -340,7 +388,10 @@ export function EventsContent({
 
                 <div className="grid gap-3">
                   {dateEvents.map((event) => {
-                    const regCount = registrationCounts[event.id] || 0
+                    const regCount = requestCounts[event.id] || 0
+                    const approvedCount = approvedCounts[event.id] || 0
+                    const status = computeAccessStatus(event, approvedCount)
+                    const remaining = remainingPasses(event, approvedCount)
                     const thumbnail = event.image_url || event.club?.image_url
                     const venueName = event.club?.name || event.scraped_venue_name
 
@@ -375,6 +426,9 @@ export function EventsContent({
                                   >
                                     {event.is_active ? 'Active' : 'Inactive'}
                                   </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {ACCESS_STATUS_LABELS[status]}
+                                  </Badge>
                                   {!event.club_id && (
                                     <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded-full flex items-center gap-1">
                                       <AlertTriangle className="w-3 h-3" />
@@ -389,6 +443,7 @@ export function EventsContent({
                                     <Users className="w-3.5 h-3.5" />
                                     <span>
                                       {regCount} {regCount === 1 ? 'request' : 'requests'}
+                                      {remaining != null ? ` · ${remaining} remaining` : ''}
                                     </span>
                                   </div>
                                   {event.ticket_url && (
@@ -547,6 +602,11 @@ function ReviewFields({
   clubs: Club[]
   imagePreview: boolean
 }) {
+  const selectedClub = clubs.find((c) => c.id === form.clubId)
+  const selectedClubPhotos = selectedClub
+    ? ([selectedClub.image_url, ...(selectedClub.gallery_urls || [])].filter(Boolean) as string[])
+    : []
+
   return (
     <div className="space-y-4">
       {imagePreview && form.imageUrl && (
@@ -586,14 +646,14 @@ function ReviewFields({
       </div>
 
       <div className="space-y-2">
-        <Label>Free Entry Cutoff (optional)</Label>
+        <Label>Complimentary Access Cutoff (optional)</Label>
         <Input
           type="time"
           value={form.cutoffTime}
           onChange={(e) => setForm({ ...form, cutoffTime: e.target.value })}
           className="bg-muted border-border/50"
         />
-        <p className="text-xs text-muted-foreground">Guests using your link get free entry before this time</p>
+        <p className="text-xs text-muted-foreground">Members using this access get in complimentary before this time</p>
       </div>
 
       <div className="space-y-2">
@@ -601,7 +661,7 @@ function ReviewFields({
           Venue
           {form.scrapedVenueName && !form.clubId && (
             <Badge variant="outline" className="ml-2 text-amber-500 border-amber-500/30">
-              scraped as "{form.scrapedVenueName}" — no match found
+              scraped as "{form.scrapedVenueName}", no match found
             </Badge>
           )}
         </Label>
@@ -624,8 +684,28 @@ function ReviewFields({
         <Input
           value={form.imageUrl}
           onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+          placeholder="Paste the event flyer URL, or pick a venue photo below"
           className="bg-muted border-border/50"
         />
+        {selectedClubPhotos.length > 0 && (
+          <div className="space-y-1.5 pt-1">
+            <p className="text-xs text-muted-foreground">Or use a venue photo</p>
+            <div className="flex gap-2 overflow-x-auto">
+              {selectedClubPhotos.map((photo, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setForm({ ...form, imageUrl: photo })}
+                  className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${
+                    form.imageUrl === photo ? 'border-gold' : 'border-transparent hover:border-border'
+                  }`}
+                >
+                  <Image src={photo} alt={`Venue photo ${i + 1}`} fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -657,6 +737,101 @@ function ReviewFields({
           className="bg-muted border-border/50"
           rows={3}
         />
+      </div>
+
+      <div className="pt-2 border-t border-border/30">
+        <h4 className="text-sm font-medium mb-3">Access Settings</h4>
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="space-y-2">
+            <Label>Allocation (optional)</Label>
+            <Input
+              type="number"
+              min="0"
+              placeholder="Uncapped"
+              value={form.allocation}
+              onChange={(e) => setForm({ ...form, allocation: e.target.value })}
+              className="bg-muted border-border/50"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Release Number</Label>
+            <Input
+              type="number"
+              min="1"
+              value={form.releaseNumber}
+              onChange={(e) => setForm({ ...form, releaseNumber: e.target.value })}
+              className="bg-muted border-border/50"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <Label>Approval</Label>
+          <Select
+            value={form.approvalMode}
+            onValueChange={(value: 'auto' | 'manual') => setForm({ ...form, approvalMode: value })}
+          >
+            <SelectTrigger className="bg-muted border-border/50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Automatically approve access</SelectItem>
+              <SelectItem value="manual">Manually approve access</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <Label>Access Status Override (optional)</Label>
+          <Select
+            value={form.accessStatusOverride || 'auto'}
+            onValueChange={(value) => setForm({ ...form, accessStatusOverride: value === 'auto' ? '' : value })}
+          >
+            <SelectTrigger className="bg-muted border-border/50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Auto (based on allocation)</SelectItem>
+              <SelectItem value="ACCESS_OPEN">Access Open</SelectItem>
+              <SelectItem value="LIMITED_ACCESS">Limited Access</SelectItem>
+              <SelectItem value="FINAL_RELEASE">Final Release</SelectItem>
+              <SelectItem value="SOLD_OUT">Sold Out</SelectItem>
+              <SelectItem value="WAITLIST">Waitlist</SelectItem>
+              <SelectItem value="ACCESS_CLOSED">Access Closed</SelectItem>
+              <SelectItem value="COMING_SOON">Coming Soon</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <Label>Announcement Text (optional)</Label>
+          <Input
+            placeholder="e.g. Members get first access to this release"
+            value={form.announcementText}
+            onChange={(e) => setForm({ ...form, announcementText: e.target.value })}
+            className="bg-muted border-border/50"
+          />
+        </div>
+
+        <div className="space-y-3">
+          <label className="flex items-center justify-between text-sm">
+            <span>Waitlist when sold out</span>
+            <Switch checked={form.waitlistEnabled} onCheckedChange={(v) => setForm({ ...form, waitlistEnabled: v })} />
+          </label>
+          <label className="flex items-center justify-between text-sm">
+            <span>Featured</span>
+            <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
+          </label>
+          <label className="flex items-center justify-between text-sm">
+            <span>Member only</span>
+            <Switch checked={form.memberOnly} onCheckedChange={(v) => setForm({ ...form, memberOnly: v })} />
+          </label>
+          <label className="flex items-center justify-between text-sm">
+            <span>VIP only</span>
+            <Switch checked={form.vipOnly} onCheckedChange={(v) => setForm({ ...form, vipOnly: v })} />
+          </label>
+        </div>
       </div>
     </div>
   )

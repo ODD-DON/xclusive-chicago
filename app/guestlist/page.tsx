@@ -24,13 +24,32 @@ async function getUpcomingEvents() {
 
   if (error) {
     console.error('Error fetching events:', error)
-    return []
+    return { events: [], approvedCounts: {} }
   }
 
-  return (events || []) as (Event & { club: Club | null })[]
+  const eventIds = (events || []).map((e) => e.id)
+  const approvedCounts: Record<string, number> = {}
+
+  if (eventIds.length > 0) {
+    const { data: approved } = await supabase
+      .from('xc_access_requests')
+      .select('event_id')
+      .eq('app_id', APP_ID)
+      .eq('status', 'approved')
+      .in('event_id', eventIds)
+
+    approved?.forEach((r) => {
+      approvedCounts[r.event_id] = (approvedCounts[r.event_id] || 0) + 1
+    })
+  }
+
+  return {
+    events: (events || []) as (Event & { club: Club | null })[],
+    approvedCounts,
+  }
 }
 
 export default async function GuestlistPage() {
-  const events = await getUpcomingEvents()
-  return <EventFeed events={events} />
+  const { events, approvedCounts } = await getUpcomingEvents()
+  return <EventFeed events={events} approvedCounts={approvedCounts} />
 }

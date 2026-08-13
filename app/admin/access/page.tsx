@@ -1,0 +1,35 @@
+import { createServiceClient } from '@/lib/supabase/service'
+import { APP_ID } from '@/lib/types'
+import { AccessContent } from './access-content'
+
+export const dynamic = 'force-dynamic'
+
+async function getData() {
+  const supabase = createServiceClient()
+
+  const { data: accessRequests } = await supabase
+    .from('xc_access_requests')
+    .select(`
+      *,
+      member:xc_members(*),
+      event:xc_events(id, title, event_date, club:xc_clubs(name))
+    `)
+    .eq('app_id', APP_ID)
+    .order('requested_at', { ascending: false })
+
+  const { data: members } = await supabase
+    .from('xc_members')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .order('created_at', { ascending: false })
+
+  return {
+    accessRequests: accessRequests || [],
+    members: members || [],
+  }
+}
+
+export default async function AdminAccessPage() {
+  const data = await getData()
+  return <AccessContent {...data} />
+}

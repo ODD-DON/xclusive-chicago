@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID, Event } from '@/lib/types'
+import { chicagoTodayStr } from '@/lib/date'
 import { notFound } from 'next/navigation'
 import { VenueContent } from './venue-content'
 
@@ -25,9 +26,7 @@ export default async function VenuePage({ params }: Props) {
     notFound()
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = chicagoTodayStr()
 
   const { data: events } = await supabase
     .from('xc_events')

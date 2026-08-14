@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID, Event, Club } from '@/lib/types'
+import { chicagoTodayStr } from '@/lib/date'
 import { HomeContent } from './home-content'
 
 export const dynamic = 'force-dynamic'
@@ -7,9 +8,7 @@ export const dynamic = 'force-dynamic'
 async function getCurrentDrops() {
   const supabase = createServiceClient()
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = chicagoTodayStr()
 
   const { data: events, error } = await supabase
     .from('xc_events')

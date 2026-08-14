@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
-import { Check, Clock, Calendar, MapPin, ArrowLeft, ArrowRight, Users, Copy, MessageCircle } from 'lucide-react'
+import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
@@ -118,22 +118,39 @@ export function AccessContent({ accessRequest }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card border border-border/50 rounded-2xl overflow-hidden"
         >
-          {status === 'approved' && (
+          {needsRsvp && (
+            <div className="p-6 pb-5 border-b border-border/30">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                <span className="text-[11px] font-semibold tracking-wide uppercase text-gold">
+                  Required to get in
+                </span>
+              </div>
+              <h1 className="text-xl font-semibold mb-1">Complete Your Venue RSVP</h1>
+              <p className="text-sm text-muted-foreground mb-4">
+                {member?.first_name}, your name isn&apos;t on the door list yet. Complete the venue&apos;s official
+                RSVP now to secure entry.
+              </p>
+              <Button
+                asChild
+                className="w-full bg-gold hover:bg-gold-light text-background font-medium"
+                onClick={markRsvpStarted}
+              >
+                <a href={rsvpUrl!} target="_blank" rel="noreferrer">
+                  Complete Venue RSVP
+                </a>
+              </Button>
+            </div>
+          )}
+
+          {status === 'approved' && !needsRsvp && (
             <div className="p-6 pb-4 text-center border-b border-border/30">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
-                {needsRsvp ? (
-                  <ArrowRight className="w-7 h-7 text-gold" />
-                ) : (
-                  <Check className="w-7 h-7 text-gold" />
-                )}
+                <Check className="w-7 h-7 text-gold" />
               </div>
-              <h1 className="text-xl font-semibold text-gold-gradient mb-1">
-                {needsRsvp ? "You're Approved" : 'Access Granted'}
-              </h1>
+              <h1 className="text-xl font-semibold text-gold-gradient mb-1">Access Granted</h1>
               <p className="text-sm text-muted-foreground">
-                {needsRsvp
-                  ? `${member?.first_name}, one step left below to lock in your spot.`
-                  : `${member?.first_name}, you're on the Xclusive Chicago guest list.`}
+                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list.
               </p>
             </div>
           )}
@@ -184,30 +201,6 @@ export function AccessContent({ accessRequest }: Props) {
                   <span>{format(parseISO(event.event_date), 'EEEE, MMMM d')}</span>
                 </div>
               </div>
-
-              {status === 'approved' && rsvpUrl && (
-                <div className="pt-2 -mx-6 px-6 py-4 bg-gold/5 border-y border-gold/20">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                    <span className="text-[11px] font-semibold tracking-wide uppercase text-gold">
-                      Required to get in
-                    </span>
-                  </div>
-                  <p className="text-sm text-foreground mb-3">
-                    Your name isn&apos;t on the door list yet. Complete the venue&apos;s official RSVP now to secure
-                    entry.
-                  </p>
-                  <Button
-                    asChild
-                    className="w-full bg-gold hover:bg-gold-light text-background font-medium"
-                    onClick={markRsvpStarted}
-                  >
-                    <a href={rsvpUrl} target="_blank" rel="noreferrer">
-                      Complete Venue RSVP
-                    </a>
-                  </Button>
-                </div>
-              )}
 
               {guest_count > 1 && status !== 'denied' && (
                 <div className="pt-3 border-t border-border/30 mt-1">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
@@ -478,13 +479,17 @@ export function EventsContent({
 
                                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                                   {venueName && <span>{venueName}</span>}
-                                  <div className="flex items-center gap-1.5">
+                                  <Link
+                                    href={`/admin/events/${event.id}`}
+                                    className="flex items-center gap-1.5 hover:text-gold transition-colors"
+                                    title="View all guests for this event"
+                                  >
                                     <Users className="w-3.5 h-3.5" />
-                                    <span>
+                                    <span className="underline decoration-dotted underline-offset-2">
                                       {regCount} {regCount === 1 ? 'request' : 'requests'}
                                       {remaining != null ? ` · ${remaining} remaining` : ''}
                                     </span>
-                                  </div>
+                                  </Link>
                                   {event.ticket_url && (
                                     <a
                                       href={event.ticket_url}

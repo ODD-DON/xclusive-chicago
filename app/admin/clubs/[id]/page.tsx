@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/service'
+import { APP_ID } from '@/lib/types'
 import { ClubForm } from '../club-form'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +13,7 @@ export default async function EditClubPage({ params }: Props) {
   const { id } = await params
   const supabase = createServiceClient()
 
-  const { data: club, error } = await supabase.from('xc_clubs').select('*').eq('id', id).single()
+  const { data: club, error } = await supabase.from('xc_clubs').select('*').eq('id', id).eq('app_id', APP_ID).single()
 
   if (error || !club) {
     notFound()

@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { Plus, Building2, MapPin, MoreVertical, Pencil, Trash2, Power, Users } from 'lucide-react'
+import { Plus, Building2, MapPin, MoreVertical, Pencil, Trash2, Power, Users, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,13 @@ const SIZE_LABELS: Record<ClubSize, { label: string; capacity: string }> = {
 export function ClubsContent({ initialClubs }: ClubsContentProps) {
   const router = useRouter()
   const [clubs, setClubs] = useState(initialClubs)
+  const [search, setSearch] = useState('')
+
+  const visibleClubs = clubs.filter((club) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return [club.name, club.address, club.neighborhood].filter(Boolean).join(' ').toLowerCase().includes(q)
+  })
 
   const toggleActive = async (club: Club) => {
     try {
@@ -86,6 +94,18 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
         </Button>
       </div>
 
+      {clubs.length > 0 && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search clubs by name or address"
+            className="pl-9 bg-muted border-border/50"
+          />
+        </div>
+      )}
+
       {clubs.length === 0 ? (
         <Card className="bg-card border-border/50">
           <CardContent className="py-12 text-center">
@@ -96,9 +116,13 @@ export function ClubsContent({ initialClubs }: ClubsContentProps) {
             </Button>
           </CardContent>
         </Card>
+      ) : visibleClubs.length === 0 ? (
+        <Card className="bg-card border-border/50">
+          <CardContent className="py-12 text-center text-muted-foreground">No clubs match &quot;{search}&quot;</CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4">
-          {clubs.map((club) => (
+          {visibleClubs.map((club) => (
             <motion.div key={club.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <Card className={`bg-card border-border/50 overflow-hidden ${!club.is_active ? 'opacity-60' : ''}`}>
                 <CardContent className="p-0">

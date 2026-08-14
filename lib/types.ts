@@ -159,18 +159,6 @@ export interface ExperienceInquiry {
   updated_at: string
 }
 
-export interface Schedule {
-  id: string
-  app_id: string
-  club_id: string
-  day_of_week: number
-  label: string | null
-  unlock_time: string | null
-  cutoff_time: string | null
-  is_active: boolean
-  created_at: string
-}
-
 export interface Registration {
   id: string
   app_id: string
@@ -238,16 +226,5 @@ export interface VipInquiry {
   sms_consent: boolean
   notes: string | null
   status: string
-  created_at: string
-}
-
-export interface Venue {
-  id: string
-  name: string
-  address: string
-  lat: number
-  lng: number
-  geofence_miles: number
-  vibe_text: string | null
   created_at: string
 }

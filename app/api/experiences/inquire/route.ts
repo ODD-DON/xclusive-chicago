@@ -30,13 +30,9 @@ export async function POST(request: NextRequest) {
       // Boat Day specific
       cruiseType,
       departureLocation,
-      // VIP Table specific
-      venuePreference,
-      bottleBudget,
       // General
       specialRequests,
       budgetRange,
-      howHeard,
       // Everything else each form sends that doesn't have its own column
       // (trip type, package, pricing estimate, time slot, amenities,
       // occasion, etc.) -- stored as-is instead of silently dropped.
@@ -68,11 +64,8 @@ export async function POST(request: NextRequest) {
         duration_hours: durationHours || null,
         cruise_type: cruiseType || null,
         departure_location: departureLocation || null,
-        venue_preference: venuePreference || null,
-        bottle_budget: bottleBudget || null,
         special_requests: specialRequests || null,
         budget_range: budgetRange || null,
-        how_heard: howHeard || null,
         details: Object.keys(details).length > 0 ? details : null,
         status: 'new',
       })

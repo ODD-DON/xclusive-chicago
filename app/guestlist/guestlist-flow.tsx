@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -151,11 +151,14 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                           {event.club?.slug ? (
                             <Link
                               href={`/venues/${event.club.slug}`}
-                              className="truncate hover:text-gold transition-colors underline-offset-2 hover:underline"
+                              className="flex items-center gap-0.5 min-w-0 text-gold underline-offset-2 hover:underline active:underline"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {event.use_venue_branding ? venueAddress || venueName : venueName}
-                              {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
+                              <span className="truncate">
+                                {event.use_venue_branding ? venueAddress || venueName : venueName}
+                                {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
+                              </span>
+                              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                             </Link>
                           ) : (
                             <span className="truncate">

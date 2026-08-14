@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import {
   Check,
   X,
@@ -17,7 +17,8 @@ import {
   Copy,
   UsersRound,
   AlertTriangle,
-  CalendarCheck,
+  ExternalLink,
+  Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -46,6 +47,14 @@ function formatPhone(phone: string): string {
     return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
   }
   return phone
+}
+
+// A request only tells us the guest clicked through to the venue's RSVP
+// page (see app/api/access/[code]/rsvp) -- there's no callback from the
+// ticketing platform, so we can never confirm they actually finished it
+// there. "Needs action" and the badges below reflect that honestly.
+function requestNeedsAction(r: AccessRequest): boolean {
+  return r.status === 'pending' || (r.status === 'approved' && !r.rsvp_completed_at)
 }
 
 // Groups members who share an invite link together: if any of a member's requests was
@@ -106,6 +115,7 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
   const [eventFilter, setEventFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'all' | 'needs_action'>('all')
+  const [displayMode, setDisplayMode] = useState<'guests' | 'events'>('guests')
 
   const events = useMemo(() => {
     const map = new Map<string, string>()
@@ -124,12 +134,7 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
     return map
   }, [requests])
 
-  const needsAction = (member: Member) => {
-    const memberRequests = requestsByMemberId.get(member.id) || []
-    return memberRequests.some(
-      (r) => r.status === 'pending' || (r.status === 'approved' && !r.rsvp_completed_at),
-    )
-  }
+  const needsAction = (member: Member) => (requestsByMemberId.get(member.id) || []).some(requestNeedsAction)
 
   const stats = useMemo(() => {
     const memberIdsWithBottleInterest = new Set(requests.filter((r) => r.bottle_service_interest).map((r) => r.member_id))
@@ -169,6 +174,31 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
   }
 
   const visibleMembers = members.filter((m) => matchesSearch(m) && matchesEvent(m) && matchesView(m))
+
+  // "By Event" view: same requests, grouped by which event they're for
+  // instead of who made them, so you can see headcount per release.
+  const eventGroups = useMemo(() => {
+    const map = new Map<string, { event: AccessRequest['event']; requests: AccessRequest[] }>()
+    requests.forEach((r) => {
+      if (!r.event?.id) return
+      if (!map.has(r.event.id)) map.set(r.event.id, { event: r.event, requests: [] })
+      map.get(r.event.id)!.requests.push(r)
+    })
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.event?.event_date || 0).getTime() - new Date(a.event?.event_date || 0).getTime(),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests])
+
+  const visibleEventGroups = eventGroups
+    .filter((g) => eventFilter === 'all' || g.event?.id === eventFilter)
+    .map((g) => ({
+      ...g,
+      requests: g.requests.filter(
+        (r) => r.member && matchesSearch(r.member) && (view === 'all' || requestNeedsAction(r)),
+      ),
+    }))
+    .filter((g) => g.requests.length > 0)
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -243,6 +273,31 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
         <StatTile label="Bottle Interest" value={stats.bottleInterest} tone="text-gold" />
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit shrink-0">
+          <button
+            type="button"
+            onClick={() => setDisplayMode('guests')}
+            className={cn(
+              'px-3 py-1.5 text-sm rounded-md transition-colors',
+              displayMode === 'guests' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            By Guest
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode('events')}
+            className={cn(
+              'px-3 py-1.5 text-sm rounded-md transition-colors',
+              displayMode === 'events' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            By Event
+          </button>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -268,113 +323,211 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
         </Select>
       </div>
 
-      {visibleMembers.length === 0 ? (
+      {displayMode === 'guests' ? (
+        visibleMembers.length === 0 ? (
+          <Card className="bg-card border-border/50">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              {view === 'needs_action' ? 'Nothing needs your attention right now' : 'No guests match these filters'}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {visibleGroups.map((group) => (
+              <div key={group[0].id} className={group.length > 1 ? 'space-y-2 border-l-2 border-gold/40 pl-3' : ''}>
+                {group.length > 1 && (
+                  <p className="text-xs font-medium text-gold flex items-center gap-1.5">
+                    <UsersRound className="w-3.5 h-3.5" />
+                    Group of {group.length}
+                  </p>
+                )}
+                <Card className="bg-card border-border/50 overflow-hidden py-0">
+                  <div className="divide-y divide-border/50">
+                    {group.map((member) => {
+                      const memberRequests = (requestsByMemberId.get(member.id) || []).sort(
+                        (a, b) => new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime(),
+                      )
+                      const mostRecent = memberRequests[0]
+                      const pendingRequests = memberRequests.filter((r) => r.status === 'pending')
+
+                      return (
+                        <GuestRow
+                          key={member.id}
+                          member={member}
+                          subtitle={
+                            mostRecent?.event
+                              ? `${mostRecent.event.title}${mostRecent.event.club?.name ? ` · ${mostRecent.event.club.name}` : ''}`
+                              : undefined
+                          }
+                          repeatCount={memberRequests.length}
+                          displayRequest={mostRecent}
+                          pendingRequestId={pendingRequests[0]?.id}
+                          onApprove={(id) => updateStatus(id, 'approved')}
+                          onDeny={(id) => updateStatus(id, 'denied')}
+                        />
+                      )
+                    })}
+                  </div>
+                </Card>
+              </div>
+            ))}
+          </div>
+        )
+      ) : visibleEventGroups.length === 0 ? (
         <Card className="bg-card border-border/50">
           <CardContent className="py-12 text-center text-muted-foreground">
-            {view === 'needs_action' ? 'Nothing needs your attention right now' : 'No guests match these filters'}
+            {view === 'needs_action' ? 'Nothing needs your attention right now' : 'No signups match these filters'}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {visibleGroups.map((group) => (
-            <div key={group[0].id} className={group.length > 1 ? 'space-y-2 border-l-2 border-gold/40 pl-3' : ''}>
-              {group.length > 1 && (
-                <p className="text-xs font-medium text-gold flex items-center gap-1.5">
-                  <UsersRound className="w-3.5 h-3.5" />
-                  Group of {group.length}
-                </p>
-              )}
-              <Card className="bg-card border-border/50 overflow-hidden py-0">
-                <div className="divide-y divide-border/50">
-                  {group.map((member) => {
-                    const memberRequests = (requestsByMemberId.get(member.id) || []).sort(
-                      (a, b) => new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime(),
-                    )
-                    const mostRecent = memberRequests[0]
-                    const pendingRequests = memberRequests.filter((r) => r.status === 'pending')
-                    const rsvpOutstanding = mostRecent?.status === 'approved' && !mostRecent.rsvp_completed_at
+        <div className="space-y-6">
+          {visibleEventGroups.map(({ event, requests: eventRequests }) => {
+            const approved = eventRequests.filter((r) => r.status === 'approved')
+            const pending = eventRequests.filter((r) => r.status === 'pending')
+            const totalGuests = approved.reduce((sum, r) => sum + (r.guest_count || 1), 0)
 
-                    return (
-                      <div key={member.id} className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1.3fr_auto] sm:items-center">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Link
-                              href={`/admin/guests/${member.id}`}
-                              className="font-medium hover:text-gold hover:underline transition-colors"
-                            >
-                              {member.first_name} {member.last_name}
-                            </Link>
-                            {memberRequests.length > 1 && (
-                              <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
-                                <Repeat className="w-3 h-3 mr-1" />
-                                {memberRequests.length}
-                              </Badge>
-                            )}
-                          </div>
-                          {mostRecent?.event && (
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {mostRecent.event.title}
-                              {mostRecent.event.club?.name && ` · ${mostRecent.event.club.name}`}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-1 text-sm text-muted-foreground min-w-0">
-                          <ContactPhone phone={member.phone} />
-                          {member.email && (
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <Mail className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate">{member.email}</span>
-                            </div>
-                          )}
-                          {member.instagram && <InstagramLink handle={member.instagram} />}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {mostRecent ? (
-                            <>
-                              <Badge className={cn('border-0', STATUS_STYLES[mostRecent.status])}>{mostRecent.status}</Badge>
-                              {rsvpOutstanding && (
-                                <Badge className="border-0 bg-amber-500/20 text-amber-500">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  RSVP not completed
-                                </Badge>
-                              )}
-                              {mostRecent.status === 'approved' && mostRecent.rsvp_completed_at && (
-                                <Badge className="border-0 bg-green-500/20 text-green-500">
-                                  <CalendarCheck className="w-3 h-3 mr-1" />
-                                  RSVP confirmed
-                                </Badge>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">No requests yet</span>
-                          )}
-                        </div>
-
-                        {pendingRequests.length > 0 && (
-                          <div className="flex gap-2 shrink-0">
-                            <Button
-                              size="sm"
-                              onClick={() => updateStatus(pendingRequests[0].id, 'approved')}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <Check className="w-4 h-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => updateStatus(pendingRequests[0].id, 'denied')}>
-                              <X className="w-4 h-4 mr-1" />
-                              Deny
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+            return (
+              <div key={event?.id}>
+                <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
+                  <div>
+                    <h2 className="text-lg font-medium">{event?.title}</h2>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+                      {event?.club?.name && <span>{event.club.name}</span>}
+                      {event?.event_date && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {format(parseISO(event.event_date), 'EEE, MMM d')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline">{eventRequests.length} signed up</Badge>
+                    <Badge className="border-0 bg-green-500/20 text-green-500">{approved.length} approved</Badge>
+                    {pending.length > 0 && (
+                      <Badge className="border-0 bg-amber-500/20 text-amber-500">{pending.length} pending</Badge>
+                    )}
+                    <Badge variant="outline">{totalGuests} total guests</Badge>
+                  </div>
                 </div>
-              </Card>
-            </div>
-          ))}
+
+                <Card className="bg-card border-border/50 overflow-hidden py-0">
+                  <div className="divide-y divide-border/50">
+                    {eventRequests.map(
+                      (r) =>
+                        r.member && (
+                          <GuestRow
+                            key={r.id}
+                            member={r.member}
+                            displayRequest={r}
+                            pendingRequestId={r.status === 'pending' ? r.id : undefined}
+                            onApprove={(id) => updateStatus(id, 'approved')}
+                            onDeny={(id) => updateStatus(id, 'denied')}
+                          />
+                        ),
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function GuestRow({
+  member,
+  subtitle,
+  repeatCount,
+  displayRequest,
+  pendingRequestId,
+  onApprove,
+  onDeny,
+}: {
+  member: Member
+  subtitle?: string
+  repeatCount?: number
+  displayRequest?: AccessRequest
+  pendingRequestId?: string
+  onApprove: (id: string) => void
+  onDeny: (id: string) => void
+}) {
+  // rsvp_completed_at is only ever set when the guest clicks through to the
+  // venue's RSVP link (see app/api/access/[code]/rsvp) -- there's no
+  // callback from the ticketing platform, so this can never mean "we
+  // verified they finished it," only "they opened it." Badges below say
+  // exactly that instead of overclaiming "confirmed."
+  const rsvpNotStarted = displayRequest?.status === 'approved' && !displayRequest.rsvp_completed_at
+  const rsvpOpened = displayRequest?.status === 'approved' && !!displayRequest.rsvp_completed_at
+
+  return (
+    <div className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1.3fr_auto] sm:items-center">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/admin/guests/${member.id}`}
+            className="font-medium hover:text-gold hover:underline transition-colors"
+          >
+            {member.first_name} {member.last_name}
+          </Link>
+          {!!repeatCount && repeatCount > 1 && (
+            <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
+              <Repeat className="w-3 h-3 mr-1" />
+              {repeatCount}
+            </Badge>
+          )}
+        </div>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
+      </div>
+
+      <div className="flex flex-col gap-1 text-sm text-muted-foreground min-w-0">
+        <ContactPhone phone={member.phone} />
+        {member.email && (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Mail className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{member.email}</span>
+          </div>
+        )}
+        {member.instagram && <InstagramLink handle={member.instagram} />}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {displayRequest ? (
+          <>
+            <Badge className={cn('border-0', STATUS_STYLES[displayRequest.status])}>{displayRequest.status}</Badge>
+            {rsvpNotStarted && (
+              <Badge className="border-0 bg-amber-500/20 text-amber-500">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                RSVP not started
+              </Badge>
+            )}
+            {rsvpOpened && (
+              <Badge className="border-0 bg-blue-500/20 text-blue-400" title="They clicked the RSVP link -- we have no way to confirm they finished it on the venue's site">
+                <ExternalLink className="w-3 h-3 mr-1" />
+                RSVP link opened
+              </Badge>
+            )}
+          </>
+        ) : (
+          <span className="text-sm text-muted-foreground">No requests yet</span>
+        )}
+      </div>
+
+      {pendingRequestId && (
+        <div className="flex gap-2 shrink-0">
+          <Button
+            size="sm"
+            onClick={() => onApprove(pendingRequestId)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Check className="w-4 h-4 mr-1" />
+            Approve
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => onDeny(pendingRequestId)}>
+            <X className="w-4 h-4 mr-1" />
+            Deny
+          </Button>
         </div>
       )}
     </div>

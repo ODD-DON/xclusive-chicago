@@ -65,6 +65,7 @@ export default function PartyBusPage() {
     returnTime: '',
     // Duration cruise fields
     cruisePickupLocation: '',
+    cruiseStartTime: '',
     durationHours: 4,
     returnToSame: true,
     differentReturnLocation: '',
@@ -461,15 +462,27 @@ export default function PartyBusPage() {
                 className="border-t border-border/30 pt-6 space-y-4"
               >
                 <h3 className="font-medium mb-4">Trip Details</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="cruisePickupLocation">Pickup Location</Label>
-                  <Input
-                    id="cruisePickupLocation"
-                    value={form.cruisePickupLocation}
-                    onChange={(e) => updateForm({ cruisePickupLocation: e.target.value })}
-                    placeholder="Where should we pick you up?"
-                    className="bg-background"
-                  />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cruisePickupLocation">Pickup Location</Label>
+                    <Input
+                      id="cruisePickupLocation"
+                      value={form.cruisePickupLocation}
+                      onChange={(e) => updateForm({ cruisePickupLocation: e.target.value })}
+                      placeholder="Where should we pick you up?"
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cruiseStartTime">Start Time</Label>
+                    <Input
+                      id="cruiseStartTime"
+                      type="time"
+                      value={form.cruiseStartTime}
+                      onChange={(e) => updateForm({ cruiseStartTime: e.target.value })}
+                      className="bg-background"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3 mt-4">

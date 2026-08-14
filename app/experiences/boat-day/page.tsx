@@ -74,7 +74,7 @@ export default function BoatDayPage() {
     groupSize: '',
     cruiseType: '',
     timeSlot: '',
-    departureLocation: 'navy_pier',
+    departureLocation: 'Navy Pier',
     budgetRange: '',
     amenities: [] as string[],
     occasion: '',
@@ -370,6 +370,17 @@ export default function BoatDayPage() {
                     />
                     <span className="text-sm text-muted-foreground">I&apos;m flexible on dates</span>
                   </label>
+
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="departureLocation">Departure Location</Label>
+                    <Input
+                      id="departureLocation"
+                      value={form.departureLocation}
+                      onChange={(e) => updateForm({ departureLocation: e.target.value })}
+                      placeholder="Navy Pier, Burnham Harbor, etc."
+                      className="bg-background"
+                    />
+                  </div>
 
                   {/* Time Slot */}
                   <div className="mt-4">

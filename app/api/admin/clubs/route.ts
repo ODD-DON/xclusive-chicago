@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest) {
       .eq('id', id)
       .single()
 
-    if (!existingClub) {
+    if (!existingClub || existingClub.app_id !== APP_ID) {
       return NextResponse.json({ error: 'Club not found' }, { status: 404 })
     }
 
@@ -85,6 +85,7 @@ export async function PUT(request: NextRequest) {
       .from('xc_clubs')
       .update(updates)
       .eq('id', id)
+      .eq('app_id', APP_ID)
       .select()
       .single()
 

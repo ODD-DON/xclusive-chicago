@@ -330,6 +330,7 @@ function InquiryExportButton({ inquiries }: { inquiries: VipInquiry[] }) {
 function ExportButton({ requests }: { requests: any[] }) {
   const exportCSV = () => {
     const headers = ['Name', 'Phone', 'Group Size', 'Budget', 'Club', 'Date', 'Notes', 'Requested At']
+    const escape = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
     const rows = requests.map((req) => [
       req.name,
       req.phone,
@@ -341,13 +342,14 @@ function ExportButton({ requests }: { requests: any[] }) {
       format(new Date(req.created_at), 'yyyy-MM-dd HH:mm'),
     ])
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
+    const csv = [headers, ...rows].map((row) => row.map(escape).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `xclusive-vip-${format(new Date(), 'yyyy-MM-dd')}.csv`
     a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (

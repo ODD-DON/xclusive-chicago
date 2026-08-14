@@ -99,7 +99,12 @@ export async function POST(request: NextRequest) {
     let description: string | null = eventNode?.description || null
     let venueName: string | null = null
     let venueAddress: string | null = null
-    let ticketUrl: string = res.url || url
+    // Always the exact link the admin pasted -- never the post-redirect
+    // URL or the platform's own "clean" canonical URL from its page
+    // metadata. Referral/tracking query params (dice_id, utm_*, Branch
+    // attribution, etc.) only work if this is byte-for-byte what was
+    // pasted; DICE's JSON-LD offers.url strips all of that.
+    const ticketUrl: string = url
 
     if (eventNode) {
       const img = eventNode.image
@@ -110,10 +115,6 @@ export async function POST(request: NextRequest) {
         venueName = location.name || null
         venueAddress = formatAddress(location.address)
       }
-
-      const offers = eventNode.offers
-      const firstOffer = Array.isArray(offers) ? offers[0] : offers
-      ticketUrl = firstOffer?.url || eventNode.url || ticketUrl
     }
 
     // Fall back to Open Graph tags for anything JSON-LD didn't provide,

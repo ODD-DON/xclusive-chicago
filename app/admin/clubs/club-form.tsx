@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Upload, X, Music, Users, Lock } from 'lucide-react'
+import { ArrowLeft, Plus, Upload, X, Music, Users, Lock, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,6 +49,7 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
     bottleMenuUrls: club?.bottle_menu_urls || ([] as string[]),
     size: (club?.size || 'medium') as ClubSize,
     musicStyles: (club?.music_styles as MusicStyle[]) || [],
+    defaultCutoffTime: club?.default_cutoff_time ? club.default_cutoff_time.slice(0, 5) : '',
     adminNotes: initialNotes || '',
   })
 
@@ -173,6 +174,7 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
           bottle_menu_urls: form.bottleMenuUrls,
           size: form.size,
           music_styles: form.musicStyles,
+          default_cutoff_time: form.defaultCutoffTime ? `${form.defaultCutoffTime}:00` : null,
           admin_notes: form.adminNotes.trim() || null,
         }),
       })
@@ -433,6 +435,24 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
                 className="bg-muted border-border/50"
               />
             </div>
+          </div>
+
+          <div className="space-y-2 bg-gold/5 border border-gold/20 rounded-lg p-4">
+            <Label htmlFor="defaultCutoffTime" className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" />
+              Default Free-Access Cutoff
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Applied automatically to every new event added for this venue (e.g. free access until midnight). Each
+              event can still override it individually.
+            </p>
+            <Input
+              id="defaultCutoffTime"
+              type="time"
+              value={form.defaultCutoffTime}
+              onChange={(e) => setForm({ ...form, defaultCutoffTime: e.target.value })}
+              className="bg-muted border-border/50"
+            />
           </div>
 
           <div className="space-y-2 bg-card border border-border/50 rounded-lg p-4">

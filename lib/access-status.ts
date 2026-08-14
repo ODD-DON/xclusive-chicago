@@ -1,7 +1,14 @@
+import { addDays, format } from 'date-fns'
 import type { AccessStatus, Event } from '@/lib/types'
 import { chicagoTodayStr, chicagoTimeStr } from '@/lib/date'
 
 const LIMITED_THRESHOLD = 10
+
+// Pure calendar-date arithmetic on an already Chicago-local 'yyyy-MM-dd'
+// string -- anchored at noon so it can't land on a DST boundary.
+function chicagoDateOffset(dateStr: string, days: number): string {
+  return format(addDays(new Date(`${dateStr}T12:00:00`), days), 'yyyy-MM-dd')
+}
 
 export function computeAccessStatus(
   event: Pick<
@@ -13,6 +20,7 @@ export function computeAccessStatus(
     | 'access_status_override'
     | 'release_number'
     | 'cutoff_time'
+    | 'unlock_time'
   >,
   approvedCount: number,
 ): AccessStatus {
@@ -20,17 +28,33 @@ export function computeAccessStatus(
     return event.access_status_override as AccessStatus
   }
 
+  if (!event.is_active) {
+    return 'ACCESS_CLOSED'
+  }
+
   const todayStr = chicagoTodayStr()
+  const yesterdayStr = chicagoDateOffset(todayStr, -1)
 
-  if (!event.is_active || event.event_date < todayStr) {
+  // A cutoff earlier in the clock than unlock_time (e.g. doors 9:30pm,
+  // complimentary access until 12:00am) "wraps" past midnight -- that
+  // midnight is the start of the *next* calendar day, not the start of
+  // event_date. Checking it against event_date's own day would close
+  // access all day, hours before the event even starts.
+  const wrapsPastMidnight = !!event.cutoff_time && !!event.unlock_time && event.cutoff_time <= event.unlock_time
+
+  if (event.event_date === todayStr) {
+    if (event.cutoff_time && !wrapsPastMidnight && chicagoTimeStr() > event.cutoff_time) {
+      return 'ACCESS_CLOSED'
+    }
+  } else if (event.event_date === yesterdayStr && wrapsPastMidnight) {
+    // Early morning after the event -- still open until the wrapped cutoff.
+    if (chicagoTimeStr() > event.cutoff_time!) {
+      return 'ACCESS_CLOSED'
+    }
+  } else if (event.event_date < todayStr) {
     return 'ACCESS_CLOSED'
   }
-
-  // Complimentary access closes at cutoff_time on the event's own date,
-  // even though the request wizard would otherwise stay open all day.
-  if (event.event_date === todayStr && event.cutoff_time && chicagoTimeStr() > event.cutoff_time) {
-    return 'ACCESS_CLOSED'
-  }
+  // event.event_date > todayStr: future event, nothing to close yet.
 
   if (event.allocation == null) {
     return event.release_number > 1 ? 'FINAL_RELEASE' : 'ACCESS_OPEN'

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         bottle_menu_urls: body.bottle_menu_urls || [],
         size: body.size || 'medium',
         music_styles: body.music_styles || [],
+        default_cutoff_time: body.default_cutoff_time || null,
         is_active: true,
       })
       .select()

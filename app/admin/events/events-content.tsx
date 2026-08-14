@@ -15,6 +15,7 @@ import {
   Pencil,
   AlertTriangle,
   ExternalLink,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -197,12 +198,13 @@ export function EventsContent({
 
       const { scraped, matchedClubId } = data
       const startDate = scraped.startDate ? new Date(scraped.startDate) : null
+      const matchedClub = matchedClubId ? clubs.find((c) => c.id === matchedClubId) : null
 
       setForm({
         title: scraped.name || '',
         eventDate: startDate ? format(startDate, 'yyyy-MM-dd') : '',
         eventTime: startDate ? format(startDate, 'HH:mm') : '',
-        cutoffTime: '',
+        cutoffTime: matchedClub?.default_cutoff_time ? matchedClub.default_cutoff_time.slice(0, 5) : '',
         imageUrl: scraped.image || '',
         description: scraped.description || '',
         clubId: matchedClubId || '',
@@ -458,6 +460,13 @@ export function EventsContent({
                                       Venue Branding
                                     </Badge>
                                   )}
+                                  {event.cutoff_time && (
+                                    <Badge variant="outline" className="text-xs border-gold/30 text-gold">
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      Free until {formatShortTime(event.cutoff_time)}
+                                      {event.club?.default_cutoff_time === event.cutoff_time && ' (venue default)'}
+                                    </Badge>
+                                  )}
                                   {!event.club_id && (
                                     <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded-full flex items-center gap-1">
                                       <AlertTriangle className="w-3 h-3" />
@@ -694,7 +703,20 @@ function ReviewFields({
             </Badge>
           )}
         </Label>
-        <Select value={form.clubId} onValueChange={(value) => setForm({ ...form, clubId: value })}>
+        <Select
+          value={form.clubId}
+          onValueChange={(value) => {
+            const club = clubs.find((c) => c.id === value)
+            setForm({
+              ...form,
+              clubId: value,
+              // Auto-fill from the venue's standing rule, but never clobber
+              // a cutoff the admin already typed in for this event.
+              cutoffTime:
+                !form.cutoffTime && club?.default_cutoff_time ? club.default_cutoff_time.slice(0, 5) : form.cutoffTime,
+            })
+          }}
+        >
           <SelectTrigger className="bg-muted border-border/50">
             <SelectValue placeholder="Select a club (or leave unmatched for now)" />
           </SelectTrigger>
@@ -887,4 +909,11 @@ function ReviewFields({
       </div>
     </div>
   )
+}
+
+function formatShortTime(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number)
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return minutes === 0 ? `${hour12}${ampm}` : `${hour12}:${minutes.toString().padStart(2, '0')}${ampm}`
 }

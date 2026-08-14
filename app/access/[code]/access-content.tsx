@@ -177,13 +177,20 @@ export function AccessContent({ accessRequest }: Props) {
               </div>
 
               {status === 'approved' && rsvpUrl && (
-                <div className="pt-2">
-                  <p className="text-xs text-muted-foreground mb-3">
-                    One final step: complete your official venue RSVP to secure entry.
+                <div className="pt-2 -mx-6 px-6 py-4 bg-gold/5 border-y border-gold/20">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                    <span className="text-[11px] font-semibold tracking-wide uppercase text-gold">
+                      Required to get in
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground mb-3">
+                    Your name isn&apos;t on the door list yet. Complete the venue&apos;s official RSVP now to secure
+                    entry.
                   </p>
                   <Button
                     asChild
-                    className="w-full bg-gold hover:bg-gold-light text-background"
+                    className="w-full bg-gold hover:bg-gold-light text-background font-medium"
                     onClick={markRsvpStarted}
                   >
                     <a href={rsvpUrl} target="_blank" rel="noreferrer">
@@ -194,7 +201,10 @@ export function AccessContent({ accessRequest }: Props) {
               )}
 
               {guest_count > 1 && status !== 'denied' && (
-                <div className="pt-2 border-t border-border/30 mt-2">
+                <div className="pt-3 border-t border-border/30 mt-1">
+                  <p className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground mb-2">
+                    Optional — invite your group
+                  </p>
                   <div className="flex items-start gap-2 text-xs text-muted-foreground mb-2">
                     <Users className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     <p>
@@ -205,7 +215,8 @@ export function AccessContent({ accessRequest }: Props) {
                   <div className="space-y-2">
                     <Button
                       type="button"
-                      className="w-full bg-gold hover:bg-gold-light text-background"
+                      variant="outline"
+                      className="w-full border-border/50 text-foreground hover:bg-muted"
                       onClick={shareInvite}
                     >
                       <MessageCircle className="w-4 h-4 mr-2" />
@@ -214,7 +225,7 @@ export function AccessContent({ accessRequest }: Props) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full border-gold/30 text-gold hover:bg-gold/10"
+                      className="w-full border-border/50 text-foreground hover:bg-muted"
                       onClick={copyGroupLink}
                     >
                       <Copy className="w-4 h-4 mr-2" />

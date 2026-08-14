@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
-import type { Club } from '@/lib/types'
 
 // Package tiers -- no prices shown; every trip is quoted individually.
 // Every tier includes free club access for the group; the tiers differ on
@@ -46,16 +45,11 @@ const DURATION_OPTIONS = [
 
 type TripType = 'pickup_dropoff' | 'duration_cruise' | null
 
-interface Props {
-  clubs: Club[]
-}
-
-export function PartyBusContent({ clubs }: Props) {
+export function PartyBusContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [tripType, setTripType] = useState<TripType>(null)
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
-  const [selectedClubId, setSelectedClubId] = useState<string | null>(null)
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -103,13 +97,6 @@ export function PartyBusContent({ clubs }: Props) {
       return
     }
 
-    if (clubs.length > 0 && !selectedClubId) {
-      toast.error('Please select which club you\'d like access to')
-      return
-    }
-
-    const club = clubs.find((c) => c.id === selectedClubId)
-
     setIsSubmitting(true)
 
     try {
@@ -120,7 +107,6 @@ export function PartyBusContent({ clubs }: Props) {
           experienceType: 'party_bus',
           tripType,
           selectedPackage,
-          preferredClub: club?.name || null,
           ...form,
         }),
       })
@@ -339,7 +325,10 @@ export function PartyBusContent({ clubs }: Props) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h3 className="font-medium mb-4">Choose your package</h3>
+              <h3 className="font-medium mb-1">Choose your package</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                We&apos;ll match your group with the best available club for your date.
+              </p>
               <div className="space-y-4">
                 {PACKAGES.map((pkg) => {
                   const isSelected = selectedPackage === pkg.id
@@ -376,38 +365,6 @@ export function PartyBusContent({ clubs }: Props) {
                     </button>
                   )
                 })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Club Selection -- every package includes free club access */}
-          {selectedPackage && clubs.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <h3 className="font-medium mb-1">Which club do you want access to?</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Your package includes free access -- pick where you want to go.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {clubs.map((club) => (
-                  <button
-                    key={club.id}
-                    type="button"
-                    onClick={() => setSelectedClubId(club.id)}
-                    className={`p-4 rounded-xl border text-center transition-all ${
-                      selectedClubId === club.id
-                        ? 'border-gold bg-gold/10 text-gold'
-                        : 'border-border/50 hover:border-gold/30'
-                    }`}
-                  >
-                    <p className="font-medium text-sm">{club.name}</p>
-                    {club.neighborhood && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{club.neighborhood}</p>
-                    )}
-                  </button>
-                ))}
               </div>
             </motion.div>
           )}
@@ -673,7 +630,7 @@ export function PartyBusContent({ clubs }: Props) {
           {/* Submit */}
           <Button
             type="submit"
-            disabled={isSubmitting || !tripType || !selectedPackage || (clubs.length > 0 && !selectedClubId)}
+            disabled={isSubmitting || !tripType || !selectedPackage}
             className="w-full bg-gold hover:bg-gold-light text-background font-medium py-6 rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)] disabled:opacity-50"
           >
             {isSubmitting ? (

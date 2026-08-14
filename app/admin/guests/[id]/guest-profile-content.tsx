@@ -248,7 +248,7 @@ export function GuestProfileContent({
           <h1 className="text-2xl font-light mb-1 flex items-center gap-2 flex-wrap">
             {displayName}
             {isBachelorette && (
-              <Badge className="bg-gold/20 text-gold border-0">
+              <Badge className="bg-pink-500/20 text-pink-400 border-0">
                 <PartyPopper className="w-3 h-3 mr-1" />
                 Bachelorette
               </Badge>

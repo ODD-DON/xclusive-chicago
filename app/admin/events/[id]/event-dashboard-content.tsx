@@ -22,6 +22,7 @@ import {
   Copy,
   AlertTriangle,
   ExternalLink,
+  PartyPopper,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -274,8 +275,14 @@ function GuestRow({
             <Users className="w-3 h-3 mr-1" />
             {request.guest_count}
           </Badge>
+          {request.celebration_type === 'Bachelorette' && (
+            <Badge className="text-xs bg-pink-500/20 text-pink-400 border-0 shrink-0">
+              <PartyPopper className="w-3 h-3 mr-1" />
+              Bachelorette
+            </Badge>
+          )}
         </div>
-        {request.celebration_type && (
+        {request.celebration_type && request.celebration_type !== 'Bachelorette' && (
           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
             {request.celebration_type === 'Other' ? request.celebration_other : request.celebration_type}

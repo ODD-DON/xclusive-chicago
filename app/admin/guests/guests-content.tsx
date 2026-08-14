@@ -25,6 +25,7 @@ import {
   Bus,
   Ship,
   Ticket,
+  PartyPopper,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -58,6 +59,7 @@ interface NormalizedContact {
   region: string | null
   extra: string | null
   date: string
+  isBachelorette: boolean
 }
 
 const EXPERIENCE_SOURCE_LABEL: Record<string, 'Party Bus' | 'Boat Day'> = {
@@ -374,6 +376,7 @@ export function GuestsContent({
       region: i.home_city ? null : i.visitor_region,
       extra: [i.party_size ? `${i.party_size} people` : null, i.budget].filter(Boolean).join(' · ') || null,
       date: i.created_at,
+      isBachelorette: i.celebration_type === 'Bachelorette',
     })),
     // Day-of bottle service requests (the upsell during guestlist RSVP) --
     // budget/notes only ever live on this table, not the access request.
@@ -391,6 +394,7 @@ export function GuestsContent({
         region: null,
         extra: ['Day-of', r.group_size ? `${r.group_size} people` : null, r.budget].filter(Boolean).join(' · '),
         date: r.created_at,
+        isBachelorette: false,
       }
     }),
   ]
@@ -407,6 +411,7 @@ export function GuestsContent({
     region: i.visitor_region,
     extra: i.group_size != null ? `${i.group_size} people` : null,
     date: i.created_at,
+    isBachelorette: (i.details as Record<string, unknown> | null)?.celebrationType === 'Bachelorette',
   }))
 
   const guestlistContacts: NormalizedContact[] = members.map((m) => {
@@ -424,6 +429,7 @@ export function GuestsContent({
       region: mostRecent?.visitor_region || null,
       extra: mostRecent?.event?.title || null,
       date: mostRecent?.requested_at || m.created_at,
+      isBachelorette: memberRequests.some((r) => r.celebration_type === 'Bachelorette'),
     }
   })
 
@@ -790,6 +796,12 @@ function ContactList({
                     {c.source}
                   </Badge>
                 )}
+                {c.isBachelorette && (
+                  <Badge className="text-xs bg-pink-500/20 text-pink-400 border-0 shrink-0">
+                    <PartyPopper className="w-3 h-3 mr-1" />
+                    Bachelorette
+                  </Badge>
+                )}
               </div>
               {c.extra && <p className="text-xs text-muted-foreground mt-0.5 truncate">{c.extra}</p>}
             </div>
@@ -922,6 +934,12 @@ function GuestRow({
               <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
                 <Repeat className="w-3 h-3 mr-1" />
                 {repeatCount}
+              </Badge>
+            )}
+            {displayRequest?.celebration_type === 'Bachelorette' && (
+              <Badge className="text-xs bg-pink-500/20 text-pink-400 border-0 shrink-0">
+                <PartyPopper className="w-3 h-3 mr-1" />
+                Bachelorette
               </Badge>
             )}
           </div>

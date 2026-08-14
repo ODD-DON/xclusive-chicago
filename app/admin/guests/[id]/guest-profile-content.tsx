@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Pencil,
   Trash2,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -292,6 +293,13 @@ export function GuestProfileContent({ member: initialMember, accessRequests: ini
                           <span className="flex items-center gap-1 text-gold">
                             <Wine className="w-3 h-3" />
                             Bottle service interest
+                          </span>
+                        )}
+                        {req.visitor_city && (
+                          <span className="flex items-center gap-1">
+                            <Globe className="w-3 h-3" />
+                            {req.visitor_city}
+                            {req.visitor_region ? `, ${req.visitor_region}` : ''}
                           </span>
                         )}
                         <span className="flex items-center gap-1">

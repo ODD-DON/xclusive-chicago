@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Calendar,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -220,7 +221,7 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
   }
 
   const exportCsv = () => {
-    const header = ['First Name', 'Last Name', 'Phone', 'Email', 'Instagram', 'SMS Consent', 'Email Consent', 'Total Requests', 'Joined']
+    const header = ['First Name', 'Last Name', 'Phone', 'Email', 'Instagram', 'City', 'SMS Consent', 'Email Consent', 'Total Requests', 'Joined']
     const escape = (value: string) => `"${value.replace(/"/g, '""')}"`
     const rows = visibleMembers.map((m) => [
       m.first_name,
@@ -228,6 +229,7 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
       formatPhone(m.phone),
       m.email || '',
       m.instagram ? `@${m.instagram.replace(/^@/, '')}` : '',
+      (requestsByMemberId.get(m.id) || []).find((r) => r.visitor_city)?.visitor_city || '',
       m.sms_consent ? 'Yes' : 'No',
       m.email_consent ? 'Yes' : 'No',
       String((requestsByMemberId.get(m.id) || []).length),
@@ -462,17 +464,12 @@ function GuestRow({
   const eventThumbnail = displayRequest?.event?.image_url || displayRequest?.event?.club?.image_url
 
   return (
-    <div className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1.3fr_auto] sm:items-center">
-      <div className="flex items-center gap-3 min-w-0">
-        {eventThumbnail ? (
-          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted" title={displayRequest?.event?.title || undefined}>
-            <Image src={eventThumbnail} alt={displayRequest?.event?.title || 'Event'} fill className="object-cover" />
-          </div>
-        ) : displayRequest?.event ? (
-          <div className="w-10 h-10 rounded-lg shrink-0 bg-muted flex items-center justify-center">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-          </div>
-        ) : null}
+    <div className="p-4 flex items-stretch gap-3 sm:grid sm:grid-cols-[1.3fr_1.4fr_1.3fr_auto] sm:items-center">
+      {/* On mobile these four blocks stack in a plain flex column filling the
+          left side, leaving the thumbnail to fill the empty space on the
+          right. On sm+ `contents` drops this wrapper so its children become
+          direct grid items again, matching the desktop 4-column layout. */}
+      <div className="flex-1 min-w-0 flex flex-col gap-3 sm:contents">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
@@ -490,42 +487,50 @@ function GuestRow({
           </div>
           {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
         </div>
-      </div>
 
-      <div className="flex flex-col gap-1 text-sm text-muted-foreground min-w-0">
-        <ContactPhone phone={member.phone} />
-        {member.email && (
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Mail className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{member.email}</span>
-          </div>
-        )}
-        {member.instagram && <InstagramLink handle={member.instagram} />}
-      </div>
+        <div className="flex flex-col gap-1 text-sm text-muted-foreground min-w-0">
+          <ContactPhone phone={member.phone} />
+          {member.email && (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Mail className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{member.email}</span>
+            </div>
+          )}
+          {member.instagram && <InstagramLink handle={member.instagram} />}
+          {displayRequest?.visitor_city && (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Globe className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {displayRequest.visitor_city}
+                {displayRequest.visitor_region ? `, ${displayRequest.visitor_region}` : ''}
+              </span>
+            </div>
+          )}
+        </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        {displayRequest ? (
-          <>
-            <Badge className={cn('border-0', STATUS_STYLES[displayRequest.status])}>{displayRequest.status}</Badge>
-            {rsvpNotStarted && (
-              <Badge className="border-0 bg-amber-500/20 text-amber-500">
-                <AlertTriangle className="w-3 h-3 mr-1" />
-                RSVP not started
-              </Badge>
-            )}
-            {rsvpOpened && (
-              <Badge className="border-0 bg-blue-500/20 text-blue-400" title="They clicked the RSVP link -- we have no way to confirm they finished it on the venue's site">
-                <ExternalLink className="w-3 h-3 mr-1" />
-                RSVP link opened
-              </Badge>
-            )}
-          </>
-        ) : (
-          <span className="text-sm text-muted-foreground">No requests yet</span>
-        )}
-      </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {displayRequest ? (
+            <>
+              <Badge className={cn('border-0', STATUS_STYLES[displayRequest.status])}>{displayRequest.status}</Badge>
+              {rsvpNotStarted && (
+                <Badge className="border-0 bg-amber-500/20 text-amber-500">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  RSVP not started
+                </Badge>
+              )}
+              {rsvpOpened && (
+                <Badge className="border-0 bg-blue-500/20 text-blue-400" title="They clicked the RSVP link -- we have no way to confirm they finished it on the venue's site">
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  RSVP link opened
+                </Badge>
+              )}
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">No requests yet</span>
+          )}
+        </div>
 
-      {pendingRequestId && (
+        {pendingRequestId && (
         <div className="flex gap-2 shrink-0">
           <Button
             size="sm"
@@ -540,7 +545,25 @@ function GuestRow({
             Deny
           </Button>
         </div>
-      )}
+        )}
+      </div>
+
+      {/* Mobile-only: a bigger thumbnail filling the empty space on the
+          right of the card. Desktop already fills that space with the
+          contact/status/action columns, so it's hidden there. */}
+      {displayRequest?.event &&
+        (eventThumbnail ? (
+          <div
+            className="relative w-20 shrink-0 rounded-lg overflow-hidden bg-muted sm:hidden"
+            title={displayRequest.event.title || undefined}
+          >
+            <Image src={eventThumbnail} alt={displayRequest.event.title || 'Event'} fill className="object-cover" />
+          </div>
+        ) : (
+          <div className="w-20 shrink-0 rounded-lg bg-muted flex items-center justify-center sm:hidden">
+            <Calendar className="w-5 h-5 text-muted-foreground" />
+          </div>
+        ))}
     </div>
   )
 }

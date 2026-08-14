@@ -174,6 +174,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.5, delay: index * 0.05 }}
+                      className="[backface-visibility:hidden]"
                     >
                       <Link href="/guestlist" className="block group">
                         <div className="flex gap-4 bg-card border border-border/50 rounded-2xl p-3 h-full transition-all duration-300 hover:border-gold/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">

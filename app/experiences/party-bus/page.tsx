@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -12,30 +12,24 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 
-// Pricing tiers
+// Package tiers -- no prices shown; every trip is quoted individually
 const PACKAGES = [
   {
     id: 'standard',
     name: 'Standard',
     description: 'Premium sound system & LED lights',
-    basePrice: 600,
-    pricePerHour: 150,
     features: ['Sound system', 'LED lights', 'AC/Heat', 'Professional driver'],
   },
   {
     id: 'premium',
     name: 'Premium',
     description: 'Everything standard + upgraded amenities',
-    basePrice: 900,
-    pricePerHour: 200,
     features: ['Everything in Standard', 'Fog machine', 'Laser lights', 'Bluetooth aux', 'Coolers included'],
   },
   {
     id: 'vip',
     name: 'VIP',
     description: 'The ultimate party bus experience',
-    basePrice: 1400,
-    pricePerHour: 300,
     features: ['Everything in Premium', 'Pole', 'Strobe lights', 'Red carpet arrival', 'Complimentary champagne'],
   },
 ]
@@ -82,29 +76,6 @@ export default function PartyBusPage() {
     setForm((prev) => ({ ...prev, ...updates }))
   }
 
-  // Calculate pricing
-  const pricing = useMemo(() => {
-    if (!selectedPackage || !tripType) return null
-
-    const pkg = PACKAGES.find((p) => p.id === selectedPackage)
-    if (!pkg) return null
-
-    let totalPrice = pkg.basePrice
-    if (tripType === 'duration_cruise') {
-      // Add hourly rate for duration trips
-      const extraHours = Math.max(0, form.durationHours - 3) // First 3 hours included in base
-      totalPrice += extraHours * pkg.pricePerHour
-    }
-
-    const perPerson = form.groupSize > 0 ? totalPrice / form.groupSize : totalPrice
-
-    return {
-      total: totalPrice,
-      perPerson: Math.ceil(perPerson),
-      package: pkg,
-    }
-  }, [selectedPackage, tripType, form.durationHours, form.groupSize])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -133,8 +104,6 @@ export default function PartyBusPage() {
           experienceType: 'party_bus',
           tripType,
           selectedPackage,
-          estimatedTotal: pricing?.total,
-          estimatedPerPerson: pricing?.perPerson,
           ...form,
         }),
       })
@@ -163,18 +132,10 @@ export default function PartyBusPage() {
               <Check className="w-10 h-10 text-gold" />
             </div>
             <h1 className="text-2xl font-medium mb-3">Request Received!</h1>
-            <p className="text-muted-foreground mb-4">
-              We&apos;ll text you within 24 hours with availability and final pricing.
+            <p className="text-muted-foreground mb-8">
+              We&apos;ll review your trip details and text you within 24 hours with availability and a
+              personalized quote.
             </p>
-            {pricing && (
-              <div className="bg-card border border-border/50 rounded-xl p-4 mb-8 text-left">
-                <p className="text-sm text-muted-foreground mb-2">Your estimate:</p>
-                <p className="text-2xl font-medium text-gold">${pricing.total}</p>
-                <p className="text-sm text-muted-foreground">
-                  ~${pricing.perPerson}/person for {form.groupSize} guests
-                </p>
-              </div>
-            )}
             <Link href="/">
               <Button variant="outline" className="rounded-full">
                 Back to Home
@@ -365,12 +326,6 @@ export default function PartyBusPage() {
               <div className="space-y-4">
                 {PACKAGES.map((pkg) => {
                   const isSelected = selectedPackage === pkg.id
-                  let pkgTotal = pkg.basePrice
-                  if (tripType === 'duration_cruise') {
-                    const extraHours = Math.max(0, form.durationHours - 3)
-                    pkgTotal += extraHours * pkg.pricePerHour
-                  }
-                  const perPerson = form.groupSize > 0 ? Math.ceil(pkgTotal / form.groupSize) : pkgTotal
 
                   return (
                     <button
@@ -383,29 +338,11 @@ export default function PartyBusPage() {
                           : 'border-border/50 hover:border-gold/30'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className={`font-medium text-lg ${isSelected ? 'text-gold' : ''}`}>
-                            {pkg.name}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-2xl font-medium ${isSelected ? 'text-gold' : ''}`}>
-                            ${perPerson}
-                          </p>
-                          <p className="text-xs text-muted-foreground">/person</p>
-                        </div>
-                      </div>
-                      
-                      {/* Total breakdown */}
-                      <div className="bg-background/50 rounded-lg p-3 mb-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            ${perPerson}/person x {form.groupSize} guests
-                          </span>
-                          <span className="font-medium">${pkgTotal} total</span>
-                        </div>
+                      <div className="mb-3">
+                        <h4 className={`font-medium text-lg ${isSelected ? 'text-gold' : ''}`}>
+                          {pkg.name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{pkg.description}</p>
                       </div>
 
                       {/* Features */}
@@ -425,35 +362,6 @@ export default function PartyBusPage() {
               </div>
             </motion.div>
           )}
-
-          {/* Live Pricing Summary - Sticky on mobile */}
-          <AnimatePresence>
-            {pricing && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-gradient-to-br from-gold/10 to-gold/5 border border-gold/30 rounded-xl p-5"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Your estimate</span>
-                  <span className="text-xs bg-gold/20 text-gold px-2 py-0.5 rounded-full">
-                    {pricing.package.name}
-                  </span>
-                </div>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-3xl font-medium text-gold">${pricing.perPerson}</p>
-                    <p className="text-sm text-muted-foreground">/person</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-medium">${pricing.total}</p>
-                    <p className="text-sm text-muted-foreground">total for {form.groupSize}</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Trip Details */}
           <AnimatePresence mode="wait">
@@ -712,8 +620,6 @@ export default function PartyBusPage() {
                 <Spinner className="w-5 h-5" />
                 <span>Submitting...</span>
               </div>
-            ) : pricing ? (
-              `Request Quote · $${pricing.perPerson}/person`
             ) : (
               'Request Quote'
             )}

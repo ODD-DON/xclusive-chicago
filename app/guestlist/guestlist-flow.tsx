@@ -19,7 +19,14 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Event, Club, CELEBRATION_TYPES } from '@/lib/types'
-import { computeAccessStatus, remainingPasses, ctaLabelForStatus, ACCESS_STATUS_LABELS, isStatusActionable } from '@/lib/access-status'
+import {
+  computeAccessStatus,
+  remainingPasses,
+  ctaLabelForStatus,
+  ACCESS_STATUS_LABELS,
+  ACCESS_STATUS_STYLES,
+  isStatusActionable,
+} from '@/lib/access-status'
 
 interface EventFeedProps {
   events: (Event & { club: Club | null })[]
@@ -30,11 +37,15 @@ interface EventFeedProps {
 
 export function EventFeed({ events, approvedCounts, referredBy, initialEventId }: EventFeedProps) {
   const [accessEvent, setAccessEvent] = useState<(Event & { club: Club | null }) | null>(null)
+  const [accessIsWaitlist, setAccessIsWaitlist] = useState(false)
 
   useEffect(() => {
     if (!initialEventId) return
     const match = events.find((e) => e.id === initialEventId)
-    if (match) setAccessEvent(match)
+    if (match) {
+      setAccessEvent(match)
+      setAccessIsWaitlist(computeAccessStatus(match, approvedCounts[match.id] || 0) === 'WAITLIST')
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEventId])
 
@@ -177,7 +188,10 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                       <Button
                         className="flex-1 bg-gold hover:bg-gold-light text-background disabled:opacity-50 h-12 text-base rounded-lg"
                         disabled={!actionable}
-                        onClick={() => setAccessEvent(event)}
+                        onClick={() => {
+                          setAccessEvent(event)
+                          setAccessIsWaitlist(status === 'WAITLIST')
+                        }}
                       >
                         {ctaLabelForStatus(status)}
                       </Button>
@@ -207,24 +221,19 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
         </div>
       </div>
 
-      <RequestAccessDialog event={accessEvent} onClose={() => setAccessEvent(null)} referredBy={referredBy} />
+      <RequestAccessDialog
+        event={accessEvent}
+        onClose={() => setAccessEvent(null)}
+        referredBy={referredBy}
+        isWaitlist={accessIsWaitlist}
+      />
     </main>
   )
 }
 
 function StatusBadge({ status }: { status: ReturnType<typeof computeAccessStatus> }) {
-  const styles: Record<string, string> = {
-    ACCESS_OPEN: 'bg-green-500/20 text-green-500',
-    LIMITED_ACCESS: 'bg-amber-500/20 text-amber-500',
-    FINAL_RELEASE: 'bg-amber-500/20 text-amber-500',
-    WAITLIST: 'bg-muted text-muted-foreground',
-    SOLD_OUT: 'bg-red-500/20 text-red-500',
-    ACCESS_CLOSED: 'bg-muted text-muted-foreground',
-    COMING_SOON: 'bg-muted text-muted-foreground',
-  }
-
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full ${styles[status] || 'bg-muted text-muted-foreground'}`}>
+    <span className={`text-xs px-2 py-0.5 rounded-full ${ACCESS_STATUS_STYLES[status] || 'bg-muted text-muted-foreground'}`}>
       {ACCESS_STATUS_LABELS[status]}
     </span>
   )
@@ -234,10 +243,12 @@ function RequestAccessDialog({
   event,
   onClose,
   referredBy,
+  isWaitlist,
 }: {
   event: (Event & { club: Club | null }) | null
   onClose: () => void
   referredBy?: string | null
+  isWaitlist?: boolean
 }) {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -364,7 +375,9 @@ function RequestAccessDialog({
 
         {step === 0 && (
           <p className="text-sm text-muted-foreground -mt-2">
-            You&apos;ve been invited to request complimentary access to {event?.title}.
+            {isWaitlist
+              ? <>You&apos;re joining the waitlist for {event?.title}. We&apos;ll reach out if a spot opens up.</>
+              : <>You&apos;ve been invited to request complimentary access to {event?.title}.</>}
           </p>
         )}
 

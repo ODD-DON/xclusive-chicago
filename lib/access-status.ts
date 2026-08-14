@@ -57,6 +57,16 @@ export function remainingPasses(
   return Math.max(0, event.allocation - approvedCount)
 }
 
+export const ACCESS_STATUS_STYLES: Record<AccessStatus, string> = {
+  ACCESS_OPEN: 'bg-green-500/20 text-green-500',
+  LIMITED_ACCESS: 'bg-amber-500/20 text-amber-500',
+  FINAL_RELEASE: 'bg-amber-500/20 text-amber-500',
+  WAITLIST: 'bg-muted text-muted-foreground',
+  SOLD_OUT: 'bg-red-500/20 text-red-500',
+  ACCESS_CLOSED: 'bg-muted text-muted-foreground',
+  COMING_SOON: 'bg-muted text-muted-foreground',
+}
+
 export const ACCESS_STATUS_LABELS: Record<AccessStatus, string> = {
   ACCESS_OPEN: 'Access Open',
   LIMITED_ACCESS: 'Limited Access',

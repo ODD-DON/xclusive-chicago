@@ -7,7 +7,7 @@ import { motion, AnimatePresence, type PanInfo } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
 import { ArrowLeft, MapPin, Users, Music, Shirt, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Club, Event, ClubSize } from '@/lib/types'
-import { computeAccessStatus, ACCESS_STATUS_LABELS } from '@/lib/access-status'
+import { computeAccessStatus, ACCESS_STATUS_LABELS, ACCESS_STATUS_STYLES } from '@/lib/access-status'
 
 const SWIPE_THRESHOLD = 50
 
@@ -201,7 +201,9 @@ export function VenueContent({ club, events, approvedCounts }: Props) {
                           {isToday ? 'Tonight' : format(dateObj, 'EEE, MMM d')}
                         </p>
                       </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${ACCESS_STATUS_STYLES[status] || 'bg-muted text-muted-foreground'}`}
+                      >
                         {ACCESS_STATUS_LABELS[status]}
                       </span>
                     </Link>

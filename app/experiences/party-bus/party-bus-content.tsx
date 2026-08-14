@@ -21,19 +21,16 @@ const PACKAGES = [
     id: 'standard',
     name: 'Standard',
     description: 'Party bus ride + free club access for your group',
-    features: ['Sound system', 'LED lights', 'AC/Heat', 'Professional driver', 'Free club access'],
   },
   {
     id: 'premium',
     name: 'Premium',
     description: 'Everything standard + free club access + 1 bottle included',
-    features: ['Everything in Standard', 'Fog machine', 'Laser lights', 'Bluetooth aux', '1 bottle included'],
   },
   {
     id: 'vip',
     name: 'VIP',
     description: 'Everything premium + free access for your entire group + 2 bottles included',
-    features: ['Everything in Premium', 'Pole', 'Strobe lights', 'Free access for everyone', '2 bottles included'],
   },
 ]
 
@@ -376,24 +373,10 @@ export function PartyBusContent() {
                           : 'border-border/50 hover:border-gold/30'
                       }`}
                     >
-                      <div className="mb-3">
-                        <h4 className={`font-medium text-lg ${isSelected ? 'text-gold' : ''}`}>
-                          {pkg.name}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                      </div>
-
-                      {/* Features */}
-                      <div className="flex flex-wrap gap-2">
-                        {pkg.features.map((feature) => (
-                          <span
-                            key={feature}
-                            className="text-xs bg-background/50 text-muted-foreground px-2 py-1 rounded-full"
-                          >
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
+                      <h4 className={`font-medium text-lg ${isSelected ? 'text-gold' : ''}`}>
+                        {pkg.name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{pkg.description}</p>
                     </button>
                   )
                 })}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Ship, Users, Sun, Waves, Clock, Check, Music } from 'lucide-react'
+import { ArrowLeft, Ship, Users, Sun, Waves, Clock, Check, Music, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -59,7 +59,7 @@ export default function BoatDayPage() {
     instagram: '',
     preferredDate: '',
     flexibleDates: false,
-    groupSize: '',
+    groupSize: 15,
     cruiseType: '',
     timeSlot: '',
     departureLocation: 'Navy Pier',
@@ -104,7 +104,6 @@ export default function BoatDayPage() {
         body: JSON.stringify({
           experienceType: 'boat_day',
           ...form,
-          groupSize: form.groupSize ? parseInt(form.groupSize) : null,
         }),
       })
 
@@ -283,18 +282,28 @@ export default function BoatDayPage() {
 
           {/* Group Size -- always asked, not gated behind cruise type */}
           <div className="border-t border-border/30 pt-6">
-            <div className="space-y-2">
-              <Label htmlFor="groupSize">How many in your group?</Label>
-              <Input
-                id="groupSize"
-                type="number"
-                value={form.groupSize}
-                onChange={(e) => updateForm({ groupSize: e.target.value })}
-                placeholder="Number of people"
-                min={1}
-                max={200}
-                className="bg-background"
-              />
+            <div className="bg-gold/5 border border-gold/20 rounded-xl p-5">
+              <Label className="text-center block mb-4">How many people in your group?</Label>
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => updateForm({ groupSize: Math.max(1, form.groupSize - 1) })}
+                  className="w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center hover:border-gold/50 transition-colors"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <div className="text-center min-w-[80px]">
+                  <span className="text-4xl font-medium text-gold">{form.groupSize}</span>
+                  <p className="text-xs text-muted-foreground mt-1">guests</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateForm({ groupSize: Math.min(200, form.groupSize + 1) })}
+                  className="w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center hover:border-gold/50 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 

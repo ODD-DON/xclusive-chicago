@@ -180,7 +180,7 @@ export function VenueContent({ club, events, approvedCounts }: Props) {
 
             {events.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No current releases at {club.name}. Check back soon, or explore other releases.
+                No current access at {club.name}. Check back soon, or explore other venues.
               </p>
             ) : (
               <div className="space-y-2">

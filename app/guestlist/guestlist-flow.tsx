@@ -70,7 +70,7 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
 
       <div className="max-w-2xl mx-auto px-4 py-6 pb-12">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-light mb-2">Current Releases</h1>
+          <h1 className="text-2xl md:text-3xl font-light mb-2">This Week&apos;s Access</h1>
           <p className="text-muted-foreground">Request access, or reserve bottle service</p>
         </div>
 
@@ -79,10 +79,10 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
             <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-gold" />
             </div>
-            <h3 className="text-lg font-medium mb-2">No releases posted yet</h3>
+            <h3 className="text-lg font-medium mb-2">No access live yet</h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-              New releases go up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
-              need something locked in before your trip? Don&apos;t wait on a release — book VIP table access in
+              New access goes up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
+              need something locked in before your trip? Don&apos;t wait around — book VIP table access in
               advance instead.
             </p>
             <Link href="/experiences/vip-tables">
@@ -101,8 +101,8 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">Coming from out of town?</p>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Don&apos;t see a release for your date yet? Releases go up weekly, but you can lock in VIP table
-                  access now instead of waiting.
+                  Don&apos;t see your date yet? New access goes up weekly, but you can lock in a VIP table now
+                  instead of waiting.
                 </p>
               </div>
               <Link href="/experiences/vip-tables" className="shrink-0 w-full sm:w-auto">

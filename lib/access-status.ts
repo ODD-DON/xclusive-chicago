@@ -106,7 +106,7 @@ export const ACCESS_STATUS_STYLES: Record<AccessStatus, string> = {
 export const ACCESS_STATUS_LABELS: Record<AccessStatus, string> = {
   ACCESS_OPEN: 'Access Open',
   LIMITED_ACCESS: 'Limited Access',
-  FINAL_RELEASE: 'Final Release',
+  FINAL_RELEASE: 'Final Access',
   SOLD_OUT: 'Sold Out',
   WAITLIST: 'Waitlist',
   ACCESS_CLOSED: 'Access Closed',

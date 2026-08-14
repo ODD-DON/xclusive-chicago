@@ -114,7 +114,7 @@ export function AccessContent({ accessRequest }: Props) {
         <div className="mb-6">
           <Link href="/guestlist" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Back to Releases
+            Back to Guestlist
           </Link>
         </div>
 
@@ -167,7 +167,7 @@ export function AccessContent({ accessRequest }: Props) {
               </div>
               <h1 className="text-xl font-semibold mb-1">Request Received</h1>
               <p className="text-sm text-muted-foreground">
-                We&apos;re reviewing access requests for this release. We&apos;ll text you when your access is confirmed.
+                We&apos;re reviewing access requests for this event. We&apos;ll text you when your access is confirmed.
               </p>
             </div>
           )}
@@ -179,7 +179,7 @@ export function AccessContent({ accessRequest }: Props) {
               </div>
               <h1 className="text-xl font-semibold mb-1">You&apos;re on the Waitlist</h1>
               <p className="text-sm text-muted-foreground">
-                This release is at capacity. We&apos;ll reach out if more access opens up.
+                This event is at capacity. We&apos;ll reach out if more access opens up.
               </p>
             </div>
           )}
@@ -187,7 +187,7 @@ export function AccessContent({ accessRequest }: Props) {
           {status === 'denied' && (
             <div className="p-6 pb-4 text-center border-b border-border/30">
               <h1 className="text-xl font-semibold mb-1">Access Unavailable</h1>
-              <p className="text-sm text-muted-foreground">This request could not be approved for this release.</p>
+              <p className="text-sm text-muted-foreground">This request could not be approved for this event.</p>
             </div>
           )}
 

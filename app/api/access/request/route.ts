@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!event.is_active) {
-      return NextResponse.json({ error: 'Access is closed for this release' }, { status: 400 })
+      return NextResponse.json({ error: 'Access is closed for this event' }, { status: 400 })
     }
 
     // Upsert the member profile by phone so repeat requests link to one profile
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       const remaining = event.allocation - approvedGuests
       if (remaining <= 0) {
         if (!event.waitlist_enabled) {
-          return NextResponse.json({ error: 'This release is sold out' }, { status: 400 })
+          return NextResponse.json({ error: 'This event is sold out' }, { status: 400 })
         }
         status = 'waitlisted'
       }

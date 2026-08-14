@@ -75,8 +75,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="text-white/80 text-lg mb-10 max-w-lg mx-auto leading-relaxed text-balance"
           >
-            Discover selected events, guest lists, and private releases across Chicago. Members request
-            access first.
+            Discover selected events and guest lists across Chicago. Members request access first.
           </motion.p>
 
           <motion.div
@@ -129,17 +128,17 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
           >
             <p className="text-gold text-sm tracking-[0.2em] uppercase mb-3">Right Now</p>
             <h2 className="text-2xl md:text-3xl font-light">
-              Current <span className="text-gold-gradient font-medium">Releases</span>
+              This Week&apos;s <span className="text-gold-gradient font-medium">Access</span>
             </h2>
           </motion.div>
 
           {events.length === 0 ? (
             <div className="bg-card border border-border/50 rounded-2xl p-8 text-center max-w-lg mx-auto">
               <Calendar className="w-10 h-10 text-gold mx-auto mb-4" />
-              <h3 className="font-medium mb-2">No releases posted yet</h3>
+              <h3 className="font-medium mb-2">No access live yet</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                New releases go up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
-                need something locked in before your trip? Don&apos;t wait on a release — book VIP table access in
+                New access goes up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
+                need something locked in before your trip? Don&apos;t wait around — book VIP table access in
                 advance instead.
               </p>
               <Link href="/experiences/vip-tables">
@@ -230,8 +229,8 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">Coming from out of town?</p>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    Don&apos;t see a release for your date yet? Releases go up weekly, but you can lock in VIP
-                    table access now instead of waiting.
+                    Don&apos;t see your date yet? New access goes up weekly, but you can lock in a VIP table now
+                    instead of waiting.
                   </p>
                 </div>
                 <Link href="/experiences/vip-tables" className="shrink-0 w-full sm:w-auto">

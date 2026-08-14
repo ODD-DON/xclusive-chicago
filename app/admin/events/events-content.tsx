@@ -870,7 +870,7 @@ function ReviewFields({
               <SelectItem value="auto">Auto (based on allocation)</SelectItem>
               <SelectItem value="ACCESS_OPEN">Access Open</SelectItem>
               <SelectItem value="LIMITED_ACCESS">Limited Access</SelectItem>
-              <SelectItem value="FINAL_RELEASE">Final Release</SelectItem>
+              <SelectItem value="FINAL_RELEASE">Final Access</SelectItem>
               <SelectItem value="SOLD_OUT">Sold Out</SelectItem>
               <SelectItem value="WAITLIST">Waitlist</SelectItem>
               <SelectItem value="ACCESS_CLOSED">Access Closed</SelectItem>
@@ -882,7 +882,7 @@ function ReviewFields({
         <div className="space-y-2 mb-4">
           <Label>Announcement Text (optional)</Label>
           <Input
-            placeholder="e.g. Members get first access to this release"
+            placeholder="e.g. Members get first access to this one"
             value={form.announcementText}
             onChange={(e) => setForm({ ...form, announcementText: e.target.value })}
             className="bg-muted border-border/50"

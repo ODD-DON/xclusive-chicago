@@ -210,17 +210,22 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                 })}
               </div>
 
-              <div className="bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
-                <p className="text-sm text-muted-foreground">
-                  <span className="text-gold font-medium">Coming from out of town?</span> Don&apos;t see a release
-                  for your date yet — releases go up weekly, but you can lock in VIP table access now instead of
-                  waiting.
-                </p>
-                <Link
-                  href="/experiences/vip-tables"
-                  className="text-sm font-medium text-gold hover:underline shrink-0 flex items-center gap-1"
-                >
-                  Plan Ahead <ArrowRight className="w-3.5 h-3.5" />
+              <div className="bg-gold/5 border border-gold/20 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
+                  <Plane className="w-5 h-5 text-gold" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">Coming from out of town?</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Don&apos;t see a release for your date yet — releases go up weekly, but you can lock in VIP
+                    table access now instead of waiting.
+                  </p>
+                </div>
+                <Link href="/experiences/vip-tables" className="shrink-0 w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto border-gold/30 text-gold hover:bg-gold/10">
+                    Plan Ahead
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  </Button>
                 </Link>
               </div>
             </>

@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
-import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy, MessageCircle } from 'lucide-react'
+import { Check, Clock, Calendar, MapPin, ArrowLeft, ArrowRight, Users, Copy, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
@@ -37,6 +37,7 @@ export function AccessContent({ accessRequest }: Props) {
   const rsvpUrl = event?.ticket_url ? buildRsvpUrl(event.ticket_url, member) : null
   const [copied, setCopied] = useState(false)
 
+  const needsRsvp = status === 'approved' && !!rsvpUrl
   const groupLink = event ? `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}` : ''
   const inviteMessage = event
     ? `Hey guys, I got us complimentary access to ${club?.name || event.title} in Chicago. Just request access through my link so we can all get on the list together: ${groupLink}`
@@ -120,11 +121,19 @@ export function AccessContent({ accessRequest }: Props) {
           {status === 'approved' && (
             <div className="p-6 pb-4 text-center border-b border-border/30">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
-                <Check className="w-7 h-7 text-gold" />
+                {needsRsvp ? (
+                  <ArrowRight className="w-7 h-7 text-gold" />
+                ) : (
+                  <Check className="w-7 h-7 text-gold" />
+                )}
               </div>
-              <h1 className="text-xl font-semibold text-gold-gradient mb-1">Access Granted</h1>
+              <h1 className="text-xl font-semibold text-gold-gradient mb-1">
+                {needsRsvp ? "You're Approved" : 'Access Granted'}
+              </h1>
               <p className="text-sm text-muted-foreground">
-                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list.
+                {needsRsvp
+                  ? `${member?.first_name}, one step left below to lock in your spot.`
+                  : `${member?.first_name}, you're on the Xclusive Chicago guest list.`}
               </p>
             </div>
           )}

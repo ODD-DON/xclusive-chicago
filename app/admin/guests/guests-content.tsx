@@ -383,7 +383,6 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
           {visibleEventGroups.map(({ event, requests: eventRequests }) => {
             const approved = eventRequests.filter((r) => r.status === 'approved')
             const pending = eventRequests.filter((r) => r.status === 'pending')
-            const totalGuests = approved.reduce((sum, r) => sum + (r.guest_count || 1), 0)
 
             return (
               <div key={event?.id}>
@@ -406,7 +405,6 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
                     {pending.length > 0 && (
                       <Badge className="border-0 bg-amber-500/20 text-amber-500">{pending.length} pending</Badge>
                     )}
-                    <Badge variant="outline">{totalGuests} total guests</Badge>
                   </div>
                 </div>
 

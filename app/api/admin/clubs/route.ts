@@ -82,17 +82,19 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Club not found' }, { status: 404 })
     }
 
-    const { data, error } = await supabase
-      .from('xc_clubs')
-      .update(updates)
-      .eq('id', id)
-      .eq('app_id', APP_ID)
-      .select()
-      .single()
+    // Team Notes autosaves independently of the rest of the club form and
+    // sends only { id, admin_notes } -- an empty update payload would error
+    // (PostgREST rejects an UPDATE with no SET clause), so skip the xc_clubs
+    // write entirely when there's nothing but notes to save.
+    let data = existingClub
+    if (Object.keys(updates).length > 0) {
+      const result = await supabase.from('xc_clubs').update(updates).eq('id', id).eq('app_id', APP_ID).select().single()
 
-    if (error) {
-      console.error('Update club error:', error)
-      return NextResponse.json({ error: 'Failed to update club' }, { status: 500 })
+      if (result.error) {
+        console.error('Update club error:', result.error)
+        return NextResponse.json({ error: 'Failed to update club' }, { status: 500 })
+      }
+      data = result.data
     }
 
     if (admin_notes !== undefined) {

@@ -73,6 +73,8 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
     size: (club?.size || 'medium') as ClubSize,
     musicStyles: (club?.music_styles as MusicStyle[]) || [],
     defaultCutoffTime: club?.default_cutoff_time ? club.default_cutoff_time.slice(0, 5) : '',
+    // Only used pre-creation -- once a club exists, NotesEditor autosaves
+    // itself directly and this field is never read again.
     adminNotes: initialNotes || '',
   })
 
@@ -198,7 +200,9 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
           size: form.size,
           music_styles: form.musicStyles,
           default_cutoff_time: form.defaultCutoffTime ? `${form.defaultCutoffTime}:00` : null,
-          admin_notes: form.adminNotes.trim() || null,
+          // Editing an existing club: Team Notes autosaves through its own
+          // route and shouldn't be re-sent (and possibly stomped) here.
+          ...(isEditing ? {} : { admin_notes: form.adminNotes.trim() || null }),
         }),
       })
 
@@ -231,8 +235,8 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start space-y-6 lg:space-y-0">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-6 lg:items-start space-y-6 lg:space-y-0">
+          <div className="space-y-6 min-w-0">
             <FormSection icon={ImageIcon} title="Photos">
               <div className="space-y-2">
                 <Label>Club Image</Label>
@@ -486,16 +490,21 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
               </div>
             </FormSection>
 
-            <FormSection
-              icon={Lock}
-              title="Team Notes"
-              description="Private — never shown to guests or on any public page. Deal terms, payout per guest, contacts, whatever you need to remember."
-            >
-              <NotesEditor
-                value={form.adminNotes}
-                onChange={(value) => setForm({ ...form, adminNotes: value })}
-                placeholder="e.g. **$10/guest** after 20 guests, paid biweekly.&#10;- Contact: ...&#10;- Deal ends: ..."
-              />
+            <FormSection icon={Lock} title="Team Notes">
+              {isEditing ? (
+                <NotesEditor clubId={club.id} initialNotes={initialNotes} />
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Save the club first, then Team Notes autosaves on its own from here.
+                  </p>
+                  <NotesEditor
+                    value={form.adminNotes}
+                    onChange={(value) => setForm({ ...form, adminNotes: value })}
+                    placeholder="e.g. $10/guest after 20 guests, paid biweekly. Contact info, deal terms, whatever you need to remember."
+                  />
+                </>
+              )}
             </FormSection>
           </div>
         </div>

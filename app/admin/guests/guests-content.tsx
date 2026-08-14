@@ -60,6 +60,8 @@ interface NormalizedContact {
   extra: string | null
   date: string
   isBachelorette: boolean
+  // VIP-only: which inquiry type this row came from, for the type filter chips.
+  subtype?: 'advance' | 'dayof'
 }
 
 const EXPERIENCE_SOURCE_LABEL: Record<string, 'Party Bus' | 'Boat Day'> = {
@@ -156,6 +158,8 @@ export function GuestsContent({
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'all' | 'needs_action'>('all')
   const [displayMode, setDisplayMode] = useState<'guests' | 'events' | 'date'>('guests')
+  const [vipTypeFilter, setVipTypeFilter] = useState<'all' | 'advance' | 'dayof'>('all')
+  const [expTypeFilter, setExpTypeFilter] = useState<'all' | 'Party Bus' | 'Boat Day'>('all')
   const initialTab = searchParams.get('tab')
   const [sourceTab, setSourceTab] = useState<SourceTab>(
     initialTab === 'vip' || initialTab === 'experiences' || initialTab === 'guestlist' ? initialTab : 'all',
@@ -377,6 +381,7 @@ export function GuestsContent({
       extra: [i.party_size ? `${i.party_size} people` : null, i.budget].filter(Boolean).join(' · ') || null,
       date: i.created_at,
       isBachelorette: i.celebration_type === 'Bachelorette',
+      subtype: 'advance' as const,
     })),
     // Day-of bottle service requests (the upsell during guestlist RSVP) --
     // budget/notes only ever live on this table, not the access request.
@@ -395,6 +400,7 @@ export function GuestsContent({
         extra: ['Day-of', r.group_size ? `${r.group_size} people` : null, r.budget].filter(Boolean).join(' · '),
         date: r.created_at,
         isBachelorette: false,
+        subtype: 'dayof' as const,
       }
     }),
   ]
@@ -447,8 +453,12 @@ export function GuestsContent({
       .includes(q)
   }
 
-  const visibleVipContacts = vipContacts.filter(matchesContactSearch)
-  const visibleExperienceContacts = experienceContacts.filter(matchesContactSearch)
+  const visibleVipContacts = vipContacts
+    .filter(matchesContactSearch)
+    .filter((c) => vipTypeFilter === 'all' || c.subtype === vipTypeFilter)
+  const visibleExperienceContacts = experienceContacts
+    .filter(matchesContactSearch)
+    .filter((c) => expTypeFilter === 'all' || c.source === expTypeFilter)
   const visibleAllContacts = allContacts.filter(matchesContactSearch)
 
   const exportContacts = (contacts: NormalizedContact[], filenameLabel: string, includeSource: boolean) => {
@@ -732,22 +742,74 @@ export function GuestsContent({
       )}
 
       {sourceTab === 'vip' && (
-        <ContactList
-          contacts={visibleVipContacts}
-          emptyLabel="No VIP inquiries yet"
-          highlightId={highlightId ? `vip-${highlightId}` : null}
-        />
+        <>
+          <TypeFilterChips
+            value={vipTypeFilter}
+            onChange={setVipTypeFilter}
+            options={[
+              { key: 'all', label: 'All', count: vipContacts.length },
+              { key: 'advance', label: 'Advance Table', count: vipContacts.filter((c) => c.subtype === 'advance').length },
+              { key: 'dayof', label: 'Bottle Service (Day-of)', count: vipContacts.filter((c) => c.subtype === 'dayof').length },
+            ]}
+          />
+          <ContactList
+            contacts={visibleVipContacts}
+            emptyLabel="No VIP inquiries yet"
+            highlightId={highlightId ? `vip-${highlightId}` : null}
+          />
+        </>
       )}
       {sourceTab === 'experiences' && (
-        <ContactList
-          contacts={visibleExperienceContacts}
-          emptyLabel="No experience inquiries yet"
-          highlightId={highlightId ? `exp-${highlightId}` : null}
-        />
+        <>
+          <TypeFilterChips
+            value={expTypeFilter}
+            onChange={setExpTypeFilter}
+            options={[
+              { key: 'all', label: 'All', count: experienceContacts.length },
+              { key: 'Party Bus', label: 'Party Bus', count: experienceContacts.filter((c) => c.source === 'Party Bus').length },
+              { key: 'Boat Day', label: 'Boat Day', count: experienceContacts.filter((c) => c.source === 'Boat Day').length },
+            ]}
+          />
+          <ContactList
+            contacts={visibleExperienceContacts}
+            emptyLabel="No experience inquiries yet"
+            highlightId={highlightId ? `exp-${highlightId}` : null}
+          />
+        </>
       )}
       {sourceTab === 'all' && (
         <ContactList contacts={visibleAllContacts} emptyLabel="No customers yet" showSource />
       )}
+    </div>
+  )
+}
+
+function TypeFilterChips<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: { key: T; label: string; count: number }[]
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => (
+        <button
+          key={opt.key}
+          type="button"
+          onClick={() => onChange(opt.key)}
+          className={cn(
+            'px-2.5 py-1 text-xs rounded-full border transition-colors',
+            value === opt.key
+              ? 'bg-gold/15 border-gold/40 text-gold'
+              : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border',
+          )}
+        >
+          {opt.label} <span className="opacity-60">{opt.count}</span>
+        </button>
+      ))}
     </div>
   )
 }

@@ -44,7 +44,7 @@ async function getData() {
   // approved-only (for computing each event's access status/remaining passes)
   const { data: accessRequests } = await supabase
     .from('xc_access_requests')
-    .select('event_id, status')
+    .select('event_id, status, guest_count')
     .eq('app_id', APP_ID)
 
   const requestCounts: Record<string, number> = {}
@@ -52,7 +52,7 @@ async function getData() {
   accessRequests?.forEach((req) => {
     requestCounts[req.event_id] = (requestCounts[req.event_id] || 0) + 1
     if (req.status === 'approved') {
-      approvedCounts[req.event_id] = (approvedCounts[req.event_id] || 0) + 1
+      approvedCounts[req.event_id] = (approvedCounts[req.event_id] || 0) + (req.guest_count || 1)
     }
   })
 

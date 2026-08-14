@@ -34,13 +34,13 @@ async function getCurrentDrops() {
   if (eventIds.length > 0) {
     const { data: approved } = await supabase
       .from('xc_access_requests')
-      .select('event_id')
+      .select('event_id, guest_count')
       .eq('app_id', APP_ID)
       .eq('status', 'approved')
       .in('event_id', eventIds)
 
     approved?.forEach((r) => {
-      approvedCounts[r.event_id] = (approvedCounts[r.event_id] || 0) + 1
+      approvedCounts[r.event_id] = (approvedCounts[r.event_id] || 0) + (r.guest_count || 1)
     })
   }
 

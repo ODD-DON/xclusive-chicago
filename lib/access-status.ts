@@ -1,11 +1,18 @@
 import type { AccessStatus, Event } from '@/lib/types'
+import { chicagoTodayStr, chicagoTimeStr } from '@/lib/date'
 
 const LIMITED_THRESHOLD = 10
 
 export function computeAccessStatus(
   event: Pick<
     Event,
-    'event_date' | 'is_active' | 'allocation' | 'waitlist_enabled' | 'access_status_override' | 'release_number'
+    | 'event_date'
+    | 'is_active'
+    | 'allocation'
+    | 'waitlist_enabled'
+    | 'access_status_override'
+    | 'release_number'
+    | 'cutoff_time'
   >,
   approvedCount: number,
 ): AccessStatus {
@@ -13,11 +20,15 @@ export function computeAccessStatus(
     return event.access_status_override as AccessStatus
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const eventDate = new Date(event.event_date)
+  const todayStr = chicagoTodayStr()
 
-  if (!event.is_active || eventDate < today) {
+  if (!event.is_active || event.event_date < todayStr) {
+    return 'ACCESS_CLOSED'
+  }
+
+  // Complimentary access closes at cutoff_time on the event's own date,
+  // even though the request wizard would otherwise stay open all day.
+  if (event.event_date === todayStr && event.cutoff_time && chicagoTimeStr() > event.cutoff_time) {
     return 'ACCESS_CLOSED'
   }
 

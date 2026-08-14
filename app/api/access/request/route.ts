@@ -85,13 +85,17 @@ export async function POST(request: NextRequest) {
     if (event.approval_mode === 'manual') {
       status = 'pending'
     } else if (event.allocation != null) {
-      const { count: approvedCount } = await supabase
+      // Allocation is a headcount, not a request count -- a single
+      // approved request can bring multiple guests, so sum guest_count
+      // rather than counting rows.
+      const { data: approvedRequests } = await supabase
         .from('xc_access_requests')
-        .select('id', { count: 'exact', head: true })
+        .select('guest_count')
         .eq('event_id', eventId)
         .eq('status', 'approved')
 
-      const remaining = event.allocation - (approvedCount || 0)
+      const approvedGuests = (approvedRequests || []).reduce((sum, r) => sum + (r.guest_count || 1), 0)
+      const remaining = event.allocation - approvedGuests
       if (remaining <= 0) {
         if (!event.waitlist_enabled) {
           return NextResponse.json({ error: 'This release is sold out' }, { status: 400 })

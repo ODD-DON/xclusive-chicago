@@ -15,26 +15,14 @@ interface Props {
   accessRequest: AccessRequest
 }
 
-// Best-effort autofill: appends common prefill query params to the venue's
-// ticket link. Not documented/guaranteed by DICE or SpeakEasy, but harmless
-// if ignored since it's just extra query params on their own page.
-function buildRsvpUrl(baseUrl: string, member: AccessRequest['member']): string {
-  try {
-    const url = new URL(baseUrl)
-    if (member?.email) url.searchParams.set('email', member.email)
-    if (member?.phone) url.searchParams.set('phone', member.phone)
-    if (member?.first_name) url.searchParams.set('first_name', member.first_name)
-    if (member?.last_name) url.searchParams.set('last_name', member.last_name)
-    return url.toString()
-  } catch {
-    return baseUrl
-  }
-}
-
 export function AccessContent({ accessRequest }: Props) {
   const { status, member, event, access_code, guest_count } = accessRequest
   const club = event?.club
-  const rsvpUrl = event?.ticket_url ? buildRsvpUrl(event.ticket_url, member) : null
+  // Always the exact link pasted into the admin, byte-for-byte -- DICE's
+  // link.dice.fm short links (Branch-powered) don't tolerate appended query
+  // params, they break the short link's own redirect/attribution lookup and
+  // silently drop the referral tracking baked into it.
+  const rsvpUrl = event?.ticket_url || null
   const [copied, setCopied] = useState(false)
 
   const needsRsvp = status === 'approved' && !!rsvpUrl

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { GuestsContent } from './guests-content'
@@ -45,5 +46,9 @@ async function getData() {
 
 export default async function AdminGuestsPage() {
   const data = await getData()
-  return <GuestsContent {...data} />
+  return (
+    <Suspense fallback={null}>
+      <GuestsContent {...data} />
+    </Suspense>
+  )
 }

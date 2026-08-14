@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     await sendAdminPush({
       title: `New ${EXPERIENCE_LABELS[experienceType] || experienceType} Inquiry`,
       body: `${firstName} ${lastName} · ${formatPhoneForPush(cleanPhone)}${groupSize ? ` · ${groupSize} people` : ''}`,
-      url: '/admin/experiences',
+      url: `/admin/guests?tab=experiences&inquiry=${data.id}`,
     })
 
     return NextResponse.json({ success: true, inquiry: data })

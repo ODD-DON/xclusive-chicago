@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       await sendAdminPush({
         title: `New ${interests.join(' + ')} Interest`,
         body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)} · ${eventTitle}${clubName ? ` @ ${clubName}` : ''}`,
-        url: `/admin/guests/${member.id}`,
+        url: `/admin/guests/${member.phone}`,
       })
     }
 

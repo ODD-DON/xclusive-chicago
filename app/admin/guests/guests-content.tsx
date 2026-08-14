@@ -1,9 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   Check,
@@ -141,12 +141,74 @@ function groupMembers(members: Member[], requests: AccessRequest[]): Member[][] 
 
 export function GuestsContent({ accessRequests: initialRequests, members, vipInquiries, experienceInquiries }: GuestsContentProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [requests, setRequests] = useState(initialRequests)
   const [eventFilter, setEventFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'all' | 'needs_action'>('all')
   const [displayMode, setDisplayMode] = useState<'guests' | 'events' | 'date'>('guests')
-  const [sourceTab, setSourceTab] = useState<SourceTab>('guestlist')
+  const initialTab = searchParams.get('tab')
+  const [sourceTab, setSourceTab] = useState<SourceTab>(
+    initialTab === 'vip' || initialTab === 'experiences' || initialTab === 'all' ? initialTab : 'guestlist',
+  )
+  const highlightId = searchParams.get('inquiry')
+  const [unreadCounts, setUnreadCounts] = useState<{ vip: number; experiences: number }>({ vip: 0, experiences: 0 })
+
+  // Deep-links from push notifications land on a specific tab with the lead
+  // already flagged unread -- landing here (not the tab click below) is what
+  // "opening" it means, so mark it viewed and clear the nav flash right away.
+  useEffect(() => {
+    if (!highlightId) return
+    const table = sourceTab === 'vip' ? 'vip' : sourceTab === 'experiences' ? 'experiences' : null
+    if (!table) return
+    fetch('/api/admin/mark-viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table, ids: [highlightId] }),
+    })
+      .then(() => window.dispatchEvent(new Event('xc:unread-counts-changed')))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchCounts = () => {
+      fetch('/api/admin/unread-counts')
+        .then((r) => r.json())
+        .then((data) => {
+          if (!cancelled) setUnreadCounts(data)
+        })
+        .catch(() => {})
+    }
+    fetchCounts()
+    window.addEventListener('xc:unread-counts-changed', fetchCounts)
+    return () => {
+      cancelled = true
+      window.removeEventListener('xc:unread-counts-changed', fetchCounts)
+    }
+  }, [])
+
+  // Switching into VIP or Experiences is "opening" whatever's currently
+  // flagged unread there (every card is already fully visible, no
+  // click-to-expand) -- clear the flash the moment the admin looks at the tab.
+  const selectSourceTab = (tab: SourceTab) => {
+    setSourceTab(tab)
+    const table = tab === 'vip' ? 'vip' : tab === 'experiences' ? 'experiences' : null
+    if (!table) return
+    const unviewedIds =
+      tab === 'vip'
+        ? vipInquiries.filter((i) => !i.viewed_at).map((i) => i.id)
+        : experienceInquiries.filter((i) => !i.viewed_at).map((i) => i.id)
+    if (unviewedIds.length === 0) return
+    fetch('/api/admin/mark-viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table, ids: unviewedIds }),
+    })
+      .then(() => window.dispatchEvent(new Event('xc:unread-counts-changed')))
+      .catch(() => {})
+  }
 
   const events = useMemo(() => {
     const map = new Map<string, string>()
@@ -427,20 +489,29 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
             { key: 'experiences', label: 'Experiences', icon: Bus },
             { key: 'all', label: 'All', icon: UsersRound },
           ] as { key: SourceTab; label: string; icon: typeof Wine }[]
-        ).map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setSourceTab(t.key)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap',
-              sourceTab === t.key ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground',
-            )}
-          >
-            <t.icon className="w-3.5 h-3.5" />
-            {t.label}
-          </button>
-        ))}
+        ).map((t) => {
+          const unread = t.key === 'vip' ? unreadCounts.vip : t.key === 'experiences' ? unreadCounts.experiences : 0
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => selectSourceTab(t.key)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap',
+                sourceTab === t.key ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              <t.icon className="w-3.5 h-3.5" />
+              {t.label}
+              {unread > 0 && (
+                <span className="flex items-center gap-1 ml-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-xs font-medium text-red-400">{unread}</span>
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {sourceTab === 'guestlist' && (
@@ -627,9 +698,19 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
         </div>
       )}
 
-      {sourceTab === 'vip' && <ContactList contacts={visibleVipContacts} emptyLabel="No VIP inquiries yet" />}
+      {sourceTab === 'vip' && (
+        <ContactList
+          contacts={visibleVipContacts}
+          emptyLabel="No VIP inquiries yet"
+          highlightId={highlightId ? `vip-${highlightId}` : null}
+        />
+      )}
       {sourceTab === 'experiences' && (
-        <ContactList contacts={visibleExperienceContacts} emptyLabel="No experience inquiries yet" />
+        <ContactList
+          contacts={visibleExperienceContacts}
+          emptyLabel="No experience inquiries yet"
+          highlightId={highlightId ? `exp-${highlightId}` : null}
+        />
       )}
       {sourceTab === 'all' && (
         <ContactList contacts={visibleAllContacts} emptyLabel="No customers yet" showSource />
@@ -642,10 +723,12 @@ function ContactList({
   contacts,
   emptyLabel,
   showSource,
+  highlightId,
 }: {
   contacts: NormalizedContact[]
   emptyLabel: string
   showSource?: boolean
+  highlightId?: string | null
 }) {
   if (contacts.length === 0) {
     return (
@@ -659,12 +742,18 @@ function ContactList({
     <Card className="bg-card border-border/50 overflow-hidden py-0">
       <div className="divide-y divide-border/50">
         {contacts.map((c) => (
-          <div key={c.id} className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1fr_auto] sm:items-center">
+          <div
+            key={c.id}
+            className={cn(
+              'p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1fr_auto] sm:items-center',
+              highlightId === c.id && 'ring-2 ring-inset ring-gold bg-gold/5',
+            )}
+          >
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium">
+                <Link href={`/admin/guests/${c.phone}`} className="font-medium hover:text-gold hover:underline transition-colors">
                   {c.firstName} {c.lastName}
-                </span>
+                </Link>
                 {showSource && (
                   <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
                     {c.source === 'VIP' && <Wine className="w-3 h-3 mr-1" />}
@@ -802,7 +891,7 @@ function GuestRow({
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href={`/admin/guests/${member.id}`}
+              href={`/admin/guests/${member.phone}`}
               className="font-medium hover:text-gold hover:underline transition-colors"
             >
               {member.first_name} {member.last_name}

@@ -150,7 +150,7 @@ export default async function AdminDashboard() {
           title="VIP Requests"
           value={stats.vipCount}
           icon={Wine}
-          href="/admin/vip"
+          href="/admin/guests?tab=vip"
         />
         <StatCard
           title="Tonight's Guests"

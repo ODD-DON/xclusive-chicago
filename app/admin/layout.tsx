@@ -10,9 +10,6 @@ import {
   Building2,
   Calendar,
   Users,
-  Wine,
-  Bus,
-  PartyPopper,
   Menu,
   X,
   ChevronRight,
@@ -27,18 +24,12 @@ const navItems = [
   { href: '/admin/clubs', label: 'Clubs', icon: Building2 },
   { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/guests', label: 'Guests', icon: Users },
-  { href: '/admin/vip', label: 'VIP Requests', icon: Wine },
-  { href: '/admin/experiences', label: 'Experiences', icon: Bus },
-  { href: '/admin/bachelorette', label: 'Bachelorette', icon: PartyPopper },
 ]
 
-// Which unread-count key (from /api/admin/unread-counts) flashes a "new"
-// badge on which nav item. The badge clears once the admin actually visits
-// that page (see the mark-viewed calls in vip-content.tsx / experiences-content.tsx).
-const UNREAD_KEYS: Record<string, 'vip' | 'experiences'> = {
-  '/admin/vip': 'vip',
-  '/admin/experiences': 'experiences',
-}
+// VIP Requests, Experiences, and Bachelorette all live inside Guests now
+// (its VIP/Experiences/All tabs) -- the nav flash for new leads there rolls
+// up onto this one item instead of three separate nav entries.
+const UNREAD_NAV_HREF = '/admin/guests'
 
 export default function AdminLayout({
   children,
@@ -135,8 +126,7 @@ export default function AdminLayout({
               </div>
               <nav className="p-4 space-y-1">
                 {navItems.map((item) => {
-                  const unreadKey = UNREAD_KEYS[item.href]
-                  const unread = unreadKey ? unreadCounts[unreadKey] : 0
+                  const unread = item.href === UNREAD_NAV_HREF ? unreadCounts.vip + unreadCounts.experiences : 0
                   return (
                     <Link
                       key={item.href}
@@ -194,8 +184,7 @@ export default function AdminLayout({
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => {
-              const unreadKey = UNREAD_KEYS[item.href]
-              const unread = unreadKey ? unreadCounts[unreadKey] : 0
+              const unread = item.href === UNREAD_NAV_HREF ? unreadCounts.vip + unreadCounts.experiences : 0
               return (
                 <Link
                   key={item.href}

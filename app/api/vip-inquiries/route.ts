@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)}${
         details.length ? ` · ${details.join(', ')}` : ''
       }`,
-      url: `/admin/vip?inquiry=${inquiry.id}`,
+      url: `/admin/guests?tab=vip&inquiry=${inquiry.id}`,
     })
 
     return NextResponse.json({ success: true })

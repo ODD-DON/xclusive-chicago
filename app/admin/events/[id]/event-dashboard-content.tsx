@@ -20,6 +20,8 @@ import {
   Check,
   X,
   Copy,
+  AlertTriangle,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -197,13 +199,17 @@ function GuestRow({
   const member = request.member
   if (!member) return null
   const digits = member.phone.replace(/\D/g, '')
+  // rsvp_completed_at only ever means "they clicked the RSVP link" -- there's
+  // no callback from the ticketing platform, so it can't mean "confirmed."
+  const rsvpNotStarted = request.status === 'approved' && !request.rsvp_completed_at
+  const rsvpOpened = request.status === 'approved' && !!request.rsvp_completed_at
 
   return (
     <div className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1.3fr_auto] sm:items-center">
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <Link
-            href={`/admin/guests/${member.id}`}
+            href={`/admin/guests/${member.phone}`}
             className="font-medium hover:text-gold hover:underline transition-colors"
           >
             {member.first_name} {member.last_name}
@@ -257,6 +263,21 @@ function GuestRow({
           <Badge className="border-0 bg-gold/20 text-gold">
             <Wine className="w-3 h-3 mr-1" />
             Bottle
+          </Badge>
+        )}
+        {rsvpNotStarted && (
+          <Badge className="border-0 bg-amber-500/20 text-amber-500">
+            <AlertTriangle className="w-3 h-3 mr-1" />
+            RSVP not started
+          </Badge>
+        )}
+        {rsvpOpened && (
+          <Badge
+            className="border-0 bg-blue-500/20 text-blue-400"
+            title="They clicked the RSVP link -- we have no way to confirm they finished it on the venue's site"
+          >
+            <ExternalLink className="w-3 h-3 mr-1" />
+            RSVP link opened
           </Badge>
         )}
       </div>

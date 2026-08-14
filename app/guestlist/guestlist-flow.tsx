@@ -106,7 +106,7 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                 </p>
               </div>
               <Link href="/experiences/vip-tables" className="shrink-0 w-full sm:w-auto">
-                <Button variant="outline" className="w-full sm:w-auto border-gold/30 text-gold hover:bg-gold/10">
+                <Button className="w-full sm:w-auto bg-gold hover:bg-gold-light text-background">
                   Plan Ahead
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                 </Button>

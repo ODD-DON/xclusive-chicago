@@ -38,15 +38,20 @@ export function AccessContent({ accessRequest }: Props) {
   const [copied, setCopied] = useState(false)
 
   const needsRsvp = status === 'approved' && !!rsvpUrl
-  const groupLink = event ? `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}` : ''
-  const inviteMessage = event
-    ? `Hey guys, I got us complimentary access to ${club?.name || event.title} in Chicago. Just request access through my link so we can all get on the list together: ${groupLink}`
-    : ''
+
+  // window is only read inside these handlers (never in the component body)
+  // so this component stays safe to server-render.
+  const buildGroupLink = () =>
+    event ? `${window.location.origin}/guestlist?event=${event.id}&ref=${access_code}` : ''
+  const buildInviteMessage = (link: string) =>
+    event
+      ? `Hey guys, I got us complimentary access to ${club?.name || event.title} in Chicago. Just request access through my link so we can all get on the list together: ${link}`
+      : ''
 
   const copyGroupLink = async () => {
     if (!event) return
     try {
-      await navigator.clipboard.writeText(groupLink)
+      await navigator.clipboard.writeText(buildGroupLink())
       setCopied(true)
       toast.success('Link copied. Send it to your group.')
       setTimeout(() => setCopied(false), 2000)
@@ -60,7 +65,7 @@ export function AccessContent({ accessRequest }: Props) {
 
     if (navigator.share) {
       try {
-        await navigator.share({ text: inviteMessage })
+        await navigator.share({ text: buildInviteMessage(buildGroupLink()) })
         return
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') return
@@ -70,7 +75,7 @@ export function AccessContent({ accessRequest }: Props) {
 
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     const smsSeparator = isIOS ? '&' : '?'
-    const smsUrl = `sms:${smsSeparator}body=${encodeURIComponent(inviteMessage)}`
+    const smsUrl = `sms:${smsSeparator}body=${encodeURIComponent(buildInviteMessage(buildGroupLink()))}`
     const win = window.open(smsUrl, '_self')
     if (!win) await copyGroupLink()
   }

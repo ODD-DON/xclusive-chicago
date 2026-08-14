@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -25,10 +25,18 @@ interface EventFeedProps {
   events: (Event & { club: Club | null })[]
   approvedCounts: Record<string, number>
   referredBy?: string | null
+  initialEventId?: string | null
 }
 
-export function EventFeed({ events, approvedCounts, referredBy }: EventFeedProps) {
+export function EventFeed({ events, approvedCounts, referredBy, initialEventId }: EventFeedProps) {
   const [accessEvent, setAccessEvent] = useState<(Event & { club: Club | null }) | null>(null)
+
+  useEffect(() => {
+    if (!initialEventId) return
+    const match = events.find((e) => e.id === initialEventId)
+    if (match) setAccessEvent(match)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEventId])
 
   return (
     <main className="min-h-screen bg-background">
@@ -387,8 +395,9 @@ function RequestAccessDialog({
                   <StepHeading title="Who's coming?" subtitle="Let's start with you." />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>First Name</Label>
+                      <Label htmlFor="firstName">First Name</Label>
                       <Input
+                        id="firstName"
                         autoFocus
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
@@ -396,8 +405,8 @@ function RequestAccessDialog({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Last Name</Label>
-                      <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="bg-muted border-border/50" />
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="bg-muted border-border/50" />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -440,8 +449,9 @@ function RequestAccessDialog({
                 <>
                   <StepHeading title="How can we reach you?" subtitle="For your access code and any updates." />
                   <div className="space-y-2">
-                    <Label>Phone</Label>
+                    <Label htmlFor="phone">Phone</Label>
                     <Input
+                      id="phone"
                       autoFocus
                       type="tel"
                       value={phone}
@@ -451,8 +461,9 @@ function RequestAccessDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Instagram</Label>
+                    <Label htmlFor="instagram">Instagram</Label>
                     <Input
+                      id="instagram"
                       value={instagram}
                       onChange={(e) => setInstagram(e.target.value)}
                       placeholder="@yourhandle"
@@ -460,8 +471,8 @@ function RequestAccessDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Email (optional)</Label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted border-border/50" />
+                    <Label htmlFor="email">Email (optional)</Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted border-border/50" />
                   </div>
 
                   <label className="flex items-start gap-3 cursor-pointer group p-3 -mx-3 rounded-lg hover:bg-muted/30 active:bg-muted/50 transition-colors">

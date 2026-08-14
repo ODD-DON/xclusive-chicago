@@ -49,11 +49,18 @@ async function getUpcomingEvents() {
 }
 
 interface Props {
-  searchParams: Promise<{ ref?: string }>
+  searchParams: Promise<{ ref?: string; event?: string }>
 }
 
 export default async function GuestlistPage({ searchParams }: Props) {
   const { events, approvedCounts } = await getUpcomingEvents()
-  const { ref } = await searchParams
-  return <EventFeed events={events} approvedCounts={approvedCounts} referredBy={ref || null} />
+  const { ref, event } = await searchParams
+  return (
+    <EventFeed
+      events={events}
+      approvedCounts={approvedCounts}
+      referredBy={ref || null}
+      initialEventId={event || null}
+    />
+  )
 }

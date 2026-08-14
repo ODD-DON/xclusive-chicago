@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
       specialRequests,
       budgetRange,
       howHeard,
+      // Everything else each form sends that doesn't have its own column
+      // (trip type, package, pricing estimate, time slot, amenities,
+      // occasion, etc.) -- stored as-is instead of silently dropped.
+      ...details
     } = body
 
     if (!firstName || !lastName || !phone || !experienceType) {
@@ -63,6 +67,7 @@ export async function POST(request: NextRequest) {
         special_requests: specialRequests || null,
         budget_range: budgetRange || null,
         how_heard: howHeard || null,
+        details: Object.keys(details).length > 0 ? details : null,
         status: 'new',
       })
       .select()

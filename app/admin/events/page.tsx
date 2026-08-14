@@ -1,18 +1,18 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
-import { format, addDays } from 'date-fns'
+import { chicagoTodayStr } from '@/lib/date'
 
 export const dynamic = 'force-dynamic'
 import { EventsContent } from './events-content'
 
 async function getData() {
   const supabase = createServiceClient()
-  const today = new Date()
-  const todayStr = format(today, 'yyyy-MM-dd')
-  const futureStr = format(addDays(today, 56), 'yyyy-MM-dd')
+  const todayStr = chicagoTodayStr()
 
-  // Get events with clubs
-  const { data: events } = await supabase
+  // Get events with clubs -- upcoming (today or later) and past, no
+  // artificial future cutoff so nothing scheduled further out silently
+  // disappears from the list.
+  const { data: upcomingEvents } = await supabase
     .from('xc_events')
     .select(`
       *,
@@ -20,8 +20,17 @@ async function getData() {
     `)
     .eq('app_id', APP_ID)
     .gte('event_date', todayStr)
-    .lte('event_date', futureStr)
     .order('event_date', { ascending: true })
+
+  const { data: pastEvents } = await supabase
+    .from('xc_events')
+    .select(`
+      *,
+      club:xc_clubs(*)
+    `)
+    .eq('app_id', APP_ID)
+    .lt('event_date', todayStr)
+    .order('event_date', { ascending: false })
 
   // Get clubs for creating new events
   const { data: clubs } = await supabase
@@ -48,10 +57,12 @@ async function getData() {
   })
 
   return {
-    events: events || [],
+    events: upcomingEvents || [],
+    pastEvents: pastEvents || [],
     clubs: clubs || [],
     requestCounts,
     approvedCounts,
+    todayStr,
   }
 }
 

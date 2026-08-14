@@ -1,21 +1,18 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
+import { chicagoTodayStr } from '@/lib/date'
 
 export const dynamic = 'force-dynamic'
-import { format, startOfWeek, endOfWeek, addDays } from 'date-fns'
-import { Building2, Calendar, Users, Wine, CheckCircle2, TrendingUp } from 'lucide-react'
+import { format, addDays } from 'date-fns'
+import { Building2, Calendar, Users, Wine, Clock, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 
 async function getStats() {
   const supabase = createServiceClient()
-  const today = new Date()
-  const todayStr = format(today, 'yyyy-MM-dd')
-  
-  // Get week range for trending
-  const weekStart = startOfWeek(today)
-  const weekEnd = endOfWeek(today)
-  
+  const todayStr = chicagoTodayStr()
+  const futureStr = format(addDays(new Date(`${todayStr}T12:00:00`), 56), 'yyyy-MM-dd')
+
   // Active clubs
   const { count: clubCount } = await supabase
     .from('xc_clubs')
@@ -24,54 +21,65 @@ async function getStats() {
     .eq('is_active', true)
 
   // Upcoming events (next 8 weeks)
-  const futureDate = format(addDays(today, 56), 'yyyy-MM-dd')
   const { count: eventCount } = await supabase
     .from('xc_events')
     .select('*', { count: 'exact', head: true })
     .eq('app_id', APP_ID)
     .eq('is_active', true)
     .gte('event_date', todayStr)
-    .lte('event_date', futureDate)
+    .lte('event_date', futureStr)
 
-  // Total registrations
-  const { count: totalRegistrations } = await supabase
-    .from('xc_registrations')
+  // Total members
+  const { count: totalMembers } = await supabase
+    .from('xc_members')
     .select('*', { count: 'exact', head: true })
     .eq('app_id', APP_ID)
 
-  // Unlocked passes
-  const { count: unlockedPasses } = await supabase
-    .from('xc_registrations')
+  // Access requests needing action: pending, or approved but RSVP not completed
+  const { count: pendingCount } = await supabase
+    .from('xc_access_requests')
     .select('*', { count: 'exact', head: true })
     .eq('app_id', APP_ID)
-    .not('activated_at', 'is', null)
+    .eq('status', 'pending')
 
-  // VIP requests
-  const { count: vipCount } = await supabase
-    .from('xc_vip_requests')
-    .select('*', { count: 'exact', head: true })
-    .eq('app_id', APP_ID)
+  // VIP interest across both the day-of request form and the advance inquiry form
+  const [{ count: vipRequestCount }, { count: vipInquiryCount }] = await Promise.all([
+    supabase.from('xc_vip_requests').select('*', { count: 'exact', head: true }).eq('app_id', APP_ID),
+    supabase.from('xc_vip_inquiries').select('*', { count: 'exact', head: true }).eq('app_id', APP_ID),
+  ])
+  const vipCount = (vipRequestCount || 0) + (vipInquiryCount || 0)
 
-  // Today's registrations
-  const { count: todayRegistrations } = await supabase
-    .from('xc_registrations')
-    .select('*', { count: 'exact', head: true })
+  // Tonight's approved guests
+  const { data: todaysEvents } = await supabase
+    .from('xc_events')
+    .select('id')
     .eq('app_id', APP_ID)
     .eq('event_date', todayStr)
+  const todaysEventIds = (todaysEvents || []).map((e) => e.id)
 
-  // Recent registrations (last 5)
-  const { data: recentRegistrations } = await supabase
-    .from('xc_registrations')
+  let tonightCount = 0
+  if (todaysEventIds.length > 0) {
+    const { count } = await supabase
+      .from('xc_access_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('app_id', APP_ID)
+      .eq('status', 'approved')
+      .in('event_id', todaysEventIds)
+    tonightCount = count || 0
+  }
+
+  // Recent access requests
+  const { data: recentRequests } = await supabase
+    .from('xc_access_requests')
     .select(`
       id,
-      first_name,
-      last_name,
-      event_date,
-      created_at,
-      club:xc_clubs(name)
+      status,
+      requested_at,
+      member:xc_members(first_name, last_name),
+      event:xc_events(title, event_date, club:xc_clubs(name))
     `)
     .eq('app_id', APP_ID)
-    .order('created_at', { ascending: false })
+    .order('requested_at', { ascending: false })
     .limit(5)
 
   // Upcoming events list
@@ -89,13 +97,14 @@ async function getStats() {
     .limit(5)
 
   return {
+    todayStr,
     clubCount: clubCount || 0,
     eventCount: eventCount || 0,
-    totalRegistrations: totalRegistrations || 0,
-    unlockedPasses: unlockedPasses || 0,
-    vipCount: vipCount || 0,
-    todayRegistrations: todayRegistrations || 0,
-    recentRegistrations: recentRegistrations || [],
+    totalMembers: totalMembers || 0,
+    pendingCount: pendingCount || 0,
+    vipCount,
+    tonightCount,
+    recentRequests: recentRequests || [],
     upcomingEvents: upcomingEvents || [],
   }
 }
@@ -125,16 +134,17 @@ export default async function AdminDashboard() {
           href="/admin/events"
         />
         <StatCard
-          title="Total Signups"
-          value={stats.totalRegistrations}
+          title="Total Members"
+          value={stats.totalMembers}
           icon={Users}
           href="/admin/guests"
         />
         <StatCard
-          title="Unlocked Passes"
-          value={stats.unlockedPasses}
-          icon={CheckCircle2}
+          title="Needs Action"
+          value={stats.pendingCount}
+          icon={Clock}
           href="/admin/guests"
+          highlight={stats.pendingCount > 0}
         />
         <StatCard
           title="VIP Requests"
@@ -144,7 +154,7 @@ export default async function AdminDashboard() {
         />
         <StatCard
           title="Tonight's Guests"
-          value={stats.todayRegistrations}
+          value={stats.tonightCount}
           icon={TrendingUp}
           href="/admin/guests"
           highlight
@@ -155,25 +165,26 @@ export default async function AdminDashboard() {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-card border-border/50">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Recent Signups</CardTitle>
+            <CardTitle className="text-lg font-medium">Recent Requests</CardTitle>
           </CardHeader>
           <CardContent>
-            {stats.recentRegistrations.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No recent signups</p>
+            {stats.recentRequests.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No recent requests</p>
             ) : (
               <div className="space-y-4">
-                {stats.recentRegistrations.map((reg: any) => (
-                  <div key={reg.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">
-                        {reg.first_name} {reg.last_name}
+                {stats.recentRequests.map((req: any) => (
+                  <div key={req.id} className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {req.member?.first_name} {req.member?.last_name}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        {reg.club?.name} - {format(new Date(reg.event_date), 'MMM d')}
+                      <p className="text-sm text-muted-foreground truncate">
+                        {req.event?.club?.name || req.event?.title || 'Unknown event'}
+                        {req.event?.event_date && ` · ${format(new Date(req.event.event_date), 'MMM d')}`}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatRelativeTime(new Date(reg.created_at))}
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {formatRelativeTime(new Date(req.requested_at))}
                     </span>
                   </div>
                 ))}
@@ -201,14 +212,12 @@ export default async function AdminDashboard() {
                     </div>
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
-                        event.event_date === format(new Date(), 'yyyy-MM-dd')
+                        event.event_date === stats.todayStr
                           ? 'bg-gold/20 text-gold'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {event.event_date === format(new Date(), 'yyyy-MM-dd')
-                        ? 'Tonight'
-                        : format(new Date(event.event_date), 'EEE')}
+                      {event.event_date === stats.todayStr ? 'Tonight' : format(new Date(event.event_date), 'EEE')}
                     </span>
                   </div>
                 ))}

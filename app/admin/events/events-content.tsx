@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { format, parseISO, isSameDay } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import {
   Plus,
   Calendar,
@@ -43,15 +43,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import type { Event, Club } from '@/lib/types'
 import { computeAccessStatus, remainingPasses, ACCESS_STATUS_LABELS } from '@/lib/access-status'
 
 interface EventsContentProps {
   events: (Event & { club: Club | null })[]
+  pastEvents: (Event & { club: Club | null })[]
   clubs: Club[]
   requestCounts: Record<string, number>
   approvedCounts: Record<string, number>
+  todayStr: string
 }
 
 interface ReviewForm {
@@ -108,12 +111,15 @@ const emptyReviewForm: ReviewForm = {
 
 export function EventsContent({
   events: initialEvents,
+  pastEvents: initialPastEvents,
   clubs,
   requestCounts,
   approvedCounts,
+  todayStr,
 }: EventsContentProps) {
   const router = useRouter()
-  const [events, setEvents] = useState(initialEvents)
+  const [events, setEvents] = useState([...initialEvents, ...initialPastEvents])
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [mode, setMode] = useState<'link' | 'manual'>('link')
   const [linkUrl, setLinkUrl] = useState('')
@@ -338,16 +344,17 @@ export function EventsContent({
     }
   }
 
-  // Group events by date
+  // Split into upcoming/past by the (Chicago-local) server-computed today,
+  // then group the visible tab's events by date
+  const visibleEvents = events.filter((e) => (tab === 'upcoming' ? e.event_date >= todayStr : e.event_date < todayStr))
+
   const eventsByDate: Record<string, (Event & { club: Club | null })[]> = {}
-  events.forEach((event) => {
+  visibleEvents.forEach((event) => {
     const date = event.event_date
     if (!eventsByDate[date]) eventsByDate[date] = []
     eventsByDate[date].push(event)
   })
-
-  // Use state for today to avoid hydration mismatch
-  const [today] = useState(() => new Date())
+  const sortedDates = Object.keys(eventsByDate).sort((a, b) => (tab === 'upcoming' ? a.localeCompare(b) : b.localeCompare(a)))
 
   return (
     <div className="space-y-6">
@@ -362,21 +369,33 @@ export function EventsContent({
         </Button>
       </div>
 
-      {events.length === 0 ? (
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'upcoming' | 'past')}>
+        <TabsList>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="past">Past</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {visibleEvents.length === 0 ? (
         <Card className="bg-card border-border/50">
           <CardContent className="py-12 text-center">
             <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No upcoming events</p>
-            <Button onClick={openDialog} variant="outline">
-              Add your first event
-            </Button>
+            <p className="text-muted-foreground mb-4">
+              {tab === 'upcoming' ? 'No upcoming events' : 'No past events yet'}
+            </p>
+            {tab === 'upcoming' && (
+              <Button onClick={openDialog} variant="outline">
+                Add your first event
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {Object.entries(eventsByDate).map(([date, dateEvents]) => {
+          {sortedDates.map((date) => {
+            const dateEvents = eventsByDate[date]
             const dateObj = parseISO(date)
-            const isToday = isSameDay(dateObj, today)
+            const isToday = date === todayStr
 
             return (
               <div key={date}>

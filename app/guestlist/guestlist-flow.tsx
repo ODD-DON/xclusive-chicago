@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, Mail } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -241,7 +241,6 @@ function RequestAccessDialog({
   const [instagram, setInstagram] = useState('')
   const [guestCount, setGuestCount] = useState('1')
   const [smsConsent, setSmsConsent] = useState(false)
-  const [emailConsent, setEmailConsent] = useState(false)
   const [celebrationType, setCelebrationType] = useState('')
   const [celebrationOther, setCelebrationOther] = useState('')
   const [bottleServiceInterest, setBottleServiceInterest] = useState(false)
@@ -252,7 +251,7 @@ function RequestAccessDialog({
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const bottleMenuUrls = event?.club?.bottle_menu_urls || []
-  const totalSteps = 5
+  const totalSteps = 4
 
   const reset = () => {
     setStep(0)
@@ -264,7 +263,6 @@ function RequestAccessDialog({
     setInstagram('')
     setGuestCount('1')
     setSmsConsent(false)
-    setEmailConsent(false)
     setCelebrationType('')
     setCelebrationOther('')
     setBottleServiceInterest(false)
@@ -325,7 +323,6 @@ function RequestAccessDialog({
           instagram: instagram.trim().replace(/^@/, ''),
           guestCount: parseInt(guestCount, 10),
           smsConsent,
-          emailConsent,
           celebrationType: celebrationType || null,
           celebrationOther: celebrationType === 'Other' ? celebrationOther.trim() || null : null,
           bottleServiceInterest,
@@ -590,15 +587,6 @@ function RequestAccessDialog({
                       </div>
                     </div>
                   )}
-                </>
-              )}
-
-              {step === 4 && (
-                <>
-                  <StepHeading title="Stay in the loop?" subtitle="First access to future releases by email. Optional." />
-                  <div className="grid grid-cols-2 gap-2">
-                    <UpsellChip icon={Mail} label="Email Updates" active={emailConsent} onClick={() => setEmailConsent((v) => !v)} />
-                  </div>
                 </>
               )}
             </motion.div>

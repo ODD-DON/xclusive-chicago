@@ -230,7 +230,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">Coming from out of town?</p>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    Don&apos;t see a release for your date yet — releases go up weekly, but you can lock in VIP
+                    Don&apos;t see a release for your date yet? Releases go up weekly, but you can lock in VIP
                     table access now instead of waiting.
                   </p>
                 </div>

@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
+import { CELEBRATION_TYPES } from '@/lib/types'
 
 // Package tiers -- no prices shown; every trip is quoted individually.
 // Every tier includes free club access for the group; the tiers differ on
@@ -72,6 +73,8 @@ export function PartyBusContent() {
     returnToSame: true,
     differentReturnLocation: '',
     // General
+    celebrationType: '',
+    celebrationOther: '',
     specialRequests: '',
   })
 
@@ -242,6 +245,35 @@ export function PartyBusContent() {
                 <Plus className="w-5 h-5" />
               </button>
             </div>
+          </div>
+
+          {/* Occasion -- always asked */}
+          <div>
+            <Label className="mb-3 block">What&apos;s the occasion?</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {CELEBRATION_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => updateForm({ celebrationType: form.celebrationType === type ? '' : type })}
+                  className={`px-3 py-2.5 rounded-lg text-sm border text-center transition-colors ${
+                    form.celebrationType === type
+                      ? 'border-gold bg-gold/10 text-gold'
+                      : 'border-border/50 text-muted-foreground hover:border-gold/30'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+            {form.celebrationType === 'Other' && (
+              <Input
+                value={form.celebrationOther}
+                onChange={(e) => updateForm({ celebrationOther: e.target.value })}
+                placeholder="Tell us what you're celebrating"
+                className="bg-background mt-3"
+              />
+            )}
           </div>
 
           {/* Trip Type Selection */}

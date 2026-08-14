@@ -4,13 +4,14 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Ship, Users, Sun, Waves, Clock, Check, Music, Wine, Calendar } from 'lucide-react'
+import { ArrowLeft, Ship, Users, Sun, Waves, Clock, Check, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
+import { CELEBRATION_TYPES } from '@/lib/types'
 
 const CRUISE_TYPES = [
   { 
@@ -63,7 +64,8 @@ export default function BoatDayPage() {
     timeSlot: '',
     departureLocation: 'Navy Pier',
     amenities: [] as string[],
-    occasion: '',
+    celebrationType: '',
+    celebrationOther: '',
     specialRequests: '',
   })
 
@@ -279,6 +281,52 @@ export default function BoatDayPage() {
             />
           </div>
 
+          {/* Group Size -- always asked, not gated behind cruise type */}
+          <div className="border-t border-border/30 pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="groupSize">How many in your group?</Label>
+              <Input
+                id="groupSize"
+                type="number"
+                value={form.groupSize}
+                onChange={(e) => updateForm({ groupSize: e.target.value })}
+                placeholder="Number of people"
+                min={1}
+                max={200}
+                className="bg-background"
+              />
+            </div>
+          </div>
+
+          {/* Occasion -- always asked, not gated behind cruise type */}
+          <div>
+            <Label className="mb-3 block">What&apos;s the occasion?</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {CELEBRATION_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => updateForm({ celebrationType: form.celebrationType === type ? '' : type })}
+                  className={`px-3 py-2.5 rounded-lg text-sm border text-center transition-colors ${
+                    form.celebrationType === type
+                      ? 'border-gold bg-gold/10 text-gold'
+                      : 'border-border/50 text-muted-foreground hover:border-gold/30'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+            {form.celebrationType === 'Other' && (
+              <Input
+                value={form.celebrationOther}
+                onChange={(e) => updateForm({ celebrationOther: e.target.value })}
+                placeholder="Tell us what you're celebrating"
+                className="bg-background mt-3"
+              />
+            )}
+          </div>
+
           {/* Cruise Type Selection */}
           <div className="border-t border-border/30 pt-6">
             <h3 className="font-medium mb-4">What type of cruise?</h3>
@@ -318,32 +366,15 @@ export default function BoatDayPage() {
                 <div className="border-t border-border/30 pt-6">
                   <h3 className="font-medium mb-4">When do you want to go?</h3>
                   
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="preferredDate">Preferred Date</Label>
-                      <Input
-                        id="preferredDate"
-                        type="date"
-                        value={form.preferredDate}
-                        onChange={(e) => updateForm({ preferredDate: e.target.value })}
-                        className="bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="groupSize">
-                        {isPrivateCharter ? 'Total Group Size' : 'How many in your group?'}
-                      </Label>
-                      <Input
-                        id="groupSize"
-                        type="number"
-                        value={form.groupSize}
-                        onChange={(e) => updateForm({ groupSize: e.target.value })}
-                        placeholder="Number of people"
-                        min={1}
-                        max={200}
-                        className="bg-background"
-                      />
-                    </div>
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="preferredDate">Preferred Date</Label>
+                    <Input
+                      id="preferredDate"
+                      type="date"
+                      value={form.preferredDate}
+                      onChange={(e) => updateForm({ preferredDate: e.target.value })}
+                      className="bg-background"
+                    />
                   </div>
 
                   <label className="flex items-center gap-2 cursor-pointer mb-4">
@@ -390,23 +421,12 @@ export default function BoatDayPage() {
                   </div>
                 </div>
 
-                {/* Private Charter: Occasion & Amenities */}
+                {/* Private Charter: Amenities */}
                 {isPrivateCharter && (
                   <div className="border-t border-border/30 pt-6">
                     <h3 className="font-medium mb-4">Tell us about your event</h3>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="occasion">What&apos;s the occasion?</Label>
-                        <Input
-                          id="occasion"
-                          value={form.occasion}
-                          onChange={(e) => updateForm({ occasion: e.target.value })}
-                          placeholder="Birthday, bachelor/ette party, corporate event, etc."
-                          className="bg-background"
-                        />
-                      </div>
 
+                    <div className="space-y-4">
                       <div>
                         <Label className="mb-3 block">What amenities do you need?</Label>
                         <div className="grid grid-cols-2 gap-3">

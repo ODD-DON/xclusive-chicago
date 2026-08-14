@@ -12,6 +12,7 @@ import {
   Users,
   Wine,
   Bus,
+  PartyPopper,
   Menu,
   X,
   ChevronRight,
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/admin/guests', label: 'Guests', icon: Users },
   { href: '/admin/vip', label: 'VIP Requests', icon: Wine },
   { href: '/admin/experiences', label: 'Experiences', icon: Bus },
+  { href: '/admin/bachelorette', label: 'Bachelorette', icon: PartyPopper },
 ]
 
 export default function AdminLayout({

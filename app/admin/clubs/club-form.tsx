@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Club, CLUB_SIZES, MUSIC_STYLES, ClubSize, MusicStyle } from '@/lib/types'
+import { NotesEditor } from './notes-editor'
 
 interface ClubFormProps {
   club?: Club
@@ -192,7 +193,7 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-5xl">
       <div>
         <Link
           href="/admin/clubs"
@@ -205,6 +206,8 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8 lg:items-start space-y-6 lg:space-y-0">
+        <div className="lg:col-span-2 space-y-6">
         <div className="space-y-2">
           <Label>Club Image</Label>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -353,29 +356,6 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="neighborhood">Neighborhood</Label>
-            <Input
-              id="neighborhood"
-              value={form.neighborhood}
-              onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
-              placeholder="Gold Coast"
-              className="bg-muted border-border/50"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dressCode">Dress Code</Label>
-            <Input
-              id="dressCode"
-              value={form.dressCode}
-              onChange={(e) => setForm({ ...form, dressCode: e.target.value })}
-              placeholder="Upscale attire"
-              className="bg-muted border-border/50"
-            />
-          </div>
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
           <Textarea
@@ -429,23 +409,48 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
             ))}
           </div>
         </div>
+        </div>
 
-        <div className="space-y-2 bg-card border border-border/50 rounded-lg p-4">
-          <Label htmlFor="adminNotes" className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5" />
-            Team Notes
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            Private — never shown to guests or on any public page. Deal terms, payout per guest, contacts, whatever
-            you need to remember.
-          </p>
-          <Textarea
-            id="adminNotes"
-            value={form.adminNotes}
-            onChange={(e) => setForm({ ...form, adminNotes: e.target.value })}
-            placeholder="e.g. $10/guest after 20 guests, paid biweekly. Contact: ..."
-            className="bg-muted border-border/50 min-h-[100px]"
-          />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="neighborhood">Neighborhood</Label>
+              <Input
+                id="neighborhood"
+                value={form.neighborhood}
+                onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                placeholder="Gold Coast"
+                className="bg-muted border-border/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dressCode">Dress Code</Label>
+              <Input
+                id="dressCode"
+                value={form.dressCode}
+                onChange={(e) => setForm({ ...form, dressCode: e.target.value })}
+                placeholder="Upscale attire"
+                className="bg-muted border-border/50"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2 bg-card border border-border/50 rounded-lg p-4">
+            <Label className="flex items-center gap-2">
+              <Lock className="w-3.5 h-3.5" />
+              Team Notes
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Private — never shown to guests or on any public page. Deal terms, payout per guest, contacts,
+              whatever you need to remember.
+            </p>
+            <NotesEditor
+              value={form.adminNotes}
+              onChange={(value) => setForm({ ...form, adminNotes: value })}
+              placeholder="e.g. **$10/guest** after 20 guests, paid biweekly.&#10;- Contact: ...&#10;- Deal ends: ..."
+            />
+          </div>
+        </div>
         </div>
 
         <div className="flex gap-3 pt-2 pb-8">

@@ -511,10 +511,10 @@ export function GuestsContent({
       <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit overflow-x-auto">
         {(
           [
+            { key: 'all', label: 'All', icon: UsersRound },
             { key: 'guestlist', label: 'Guestlist', icon: Ticket },
             { key: 'vip', label: 'VIP', icon: Wine },
             { key: 'experiences', label: 'Experiences', icon: Bus },
-            { key: 'all', label: 'All', icon: UsersRound },
           ] as { key: SourceTab; label: string; icon: typeof Wine }[]
         ).map((t) => {
           const unread = t.key === 'vip' ? unreadCounts.vip : t.key === 'experiences' ? unreadCounts.experiences : 0

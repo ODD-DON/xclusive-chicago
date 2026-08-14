@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { CELEBRATION_TYPES } from '@/lib/types'
+import { formatPhoneInput } from '@/lib/phone'
 
 const BUDGET_OPTIONS = ['$500-1000', '$1000-2500', '$2500-5000', '$5000+']
 
@@ -217,8 +218,8 @@ export default function VipTablesPage() {
                   <Input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(312) 555-0123"
+                    onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                    placeholder="312-555-0123"
                     className="bg-muted border-border/50"
                   />
                 </div>

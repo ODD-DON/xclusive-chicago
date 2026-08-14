@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { CELEBRATION_TYPES } from '@/lib/types'
+import { formatPhoneInput } from '@/lib/phone'
 
 // Package tiers -- no prices shown; every trip is quoted individually.
 // Every tier includes free club access for the group; the tiers differ on
@@ -578,8 +579,8 @@ export function PartyBusContent() {
                   id="phone"
                   type="tel"
                   value={form.phone}
-                  onChange={(e) => updateForm({ phone: e.target.value })}
-                  placeholder="(312) 555-0123"
+                  onChange={(e) => updateForm({ phone: formatPhoneInput(e.target.value) })}
+                  placeholder="312-555-0123"
                   className="bg-background"
                   required
                 />

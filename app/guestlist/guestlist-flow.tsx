@@ -19,6 +19,7 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Event, Club, CELEBRATION_TYPES, CLUB_SIZE_LABELS } from '@/lib/types'
+import { formatPhoneInput } from '@/lib/phone'
 import {
   computeAccessStatus,
   remainingPasses,
@@ -521,8 +522,8 @@ function RequestAccessDialog({
                       autoFocus
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="(312) 555-0123"
+                      onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                      placeholder="312-555-0123"
                       className="bg-muted border-border/50"
                     />
                   </div>

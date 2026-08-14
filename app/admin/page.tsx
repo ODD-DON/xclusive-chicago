@@ -68,19 +68,66 @@ async function getStats() {
     tonightCount = count || 0
   }
 
-  // Recent access requests
-  const { data: recentRequests } = await supabase
-    .from('xc_access_requests')
-    .select(`
-      id,
-      status,
-      requested_at,
-      member:xc_members(first_name, last_name),
-      event:xc_events(title, event_date, club:xc_clubs(name))
-    `)
-    .eq('app_id', APP_ID)
-    .order('requested_at', { ascending: false })
-    .limit(5)
+  // Recent activity across every lead source -- Guests centralizes on the
+  // same idea (its default tab is "All"), so the dashboard's summary should
+  // match instead of only ever showing guestlist requests.
+  const [recentRequestsRes, recentVipRes, recentExpRes] = await Promise.all([
+    supabase
+      .from('xc_access_requests')
+      .select(`
+        id,
+        status,
+        requested_at,
+        member:xc_members(first_name, last_name, phone),
+        event:xc_events(title, event_date, club:xc_clubs(name))
+      `)
+      .eq('app_id', APP_ID)
+      .order('requested_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('xc_vip_inquiries')
+      .select('id, first_name, last_name, phone, created_at')
+      .eq('app_id', APP_ID)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('xc_experience_inquiries')
+      .select('id, first_name, last_name, phone, experience_type, created_at')
+      .eq('app_id', APP_ID)
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
+
+  const EXPERIENCE_LABELS: Record<string, string> = { party_bus: 'Party Bus', boat_day: 'Boat Day' }
+
+  const recentActivity = [
+    ...(recentRequestsRes.data || []).map((r: any) => ({
+      id: `ar-${r.id}`,
+      source: 'Guestlist',
+      name: `${r.member?.first_name || ''} ${r.member?.last_name || ''}`.trim(),
+      phone: r.member?.phone,
+      detail: r.event?.club?.name || r.event?.title || 'Unknown event',
+      date: r.requested_at,
+    })),
+    ...(recentVipRes.data || []).map((v: any) => ({
+      id: `vip-${v.id}`,
+      source: 'VIP',
+      name: `${v.first_name} ${v.last_name}`.trim(),
+      phone: v.phone,
+      detail: 'Advance table inquiry',
+      date: v.created_at,
+    })),
+    ...(recentExpRes.data || []).map((e: any) => ({
+      id: `exp-${e.id}`,
+      source: EXPERIENCE_LABELS[e.experience_type] || 'Experience',
+      name: `${e.first_name} ${e.last_name}`.trim(),
+      phone: e.phone,
+      detail: EXPERIENCE_LABELS[e.experience_type] || 'Experience inquiry',
+      date: e.created_at,
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
 
   // Upcoming events list
   const { data: upcomingEvents } = await supabase
@@ -104,7 +151,7 @@ async function getStats() {
     pendingCount: pendingCount || 0,
     vipCount,
     tonightCount,
-    recentRequests: recentRequests || [],
+    recentActivity,
     upcomingEvents: upcomingEvents || [],
   }
 }
@@ -165,28 +212,29 @@ export default async function AdminDashboard() {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-card border-border/50">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Recent Requests</CardTitle>
+            <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            {stats.recentRequests.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No recent requests</p>
+            {stats.recentActivity.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No recent activity</p>
             ) : (
               <div className="space-y-4">
-                {stats.recentRequests.map((req: any) => (
-                  <div key={req.id} className="flex items-center justify-between gap-3">
+                {stats.recentActivity.map((item: any) => (
+                  <Link
+                    key={item.id}
+                    href={item.phone ? `/admin/guests/${item.phone}` : '/admin/guests'}
+                    className="flex items-center justify-between gap-3 hover:opacity-80 transition-opacity"
+                  >
                     <div className="min-w-0">
-                      <p className="font-medium truncate">
-                        {req.member?.first_name} {req.member?.last_name}
-                      </p>
+                      <p className="font-medium truncate">{item.name || 'Unknown'}</p>
                       <p className="text-sm text-muted-foreground truncate">
-                        {req.event?.club?.name || req.event?.title || 'Unknown event'}
-                        {req.event?.event_date && ` · ${format(new Date(req.event.event_date), 'MMM d')}`}
+                        <span className="text-gold">{item.source}</span> · {item.detail}
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {formatRelativeTime(new Date(req.requested_at))}
+                      {formatRelativeTime(new Date(item.date))}
                     </span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

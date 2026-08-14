@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Event, Club } from '@/lib/types'
+import { formatPhoneInput } from '@/lib/phone'
 
 interface SignupFormProps {
   event: Event & { club: Club }
@@ -178,8 +179,8 @@ export function SignupForm({ event, referredBy }: SignupFormProps) {
             id="phone"
             type="tel"
             value={form.phone}
-            onChange={(e) => updateForm({ phone: e.target.value })}
-            placeholder="(312) 555-0123"
+            onChange={(e) => updateForm({ phone: formatPhoneInput(e.target.value) })}
+            placeholder="312-555-0123"
             className="pl-10 bg-card border-border/50 focus:border-gold/50"
             required
           />

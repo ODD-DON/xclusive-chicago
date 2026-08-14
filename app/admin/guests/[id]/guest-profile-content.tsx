@@ -40,6 +40,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import type { AccessRequest, Member, VipInquiry, ExperienceInquiry, VipRequest } from '@/lib/types'
+import { formatPhoneInput } from '@/lib/phone'
 
 interface Props {
   phone: string
@@ -129,6 +130,24 @@ export function GuestProfileContent({
       : formatPhone(phone)
   const displayEmail = member?.email || fallbackSource?.email || null
   const displayInstagram = member?.instagram || fallbackSource?.instagram || null
+
+  // Location isn't on any single source consistently -- pull the first
+  // request/inquiry that actually has one, newest first since these arrays
+  // are already sorted that way.
+  const vipCityMatch = vipInquiries.find((i) => i.home_city || i.visitor_city)
+  const requestCityMatch = requests.find((r) => r.visitor_city)
+  const expCityMatch = experienceInquiries.find((i) => i.visitor_city)
+  const displayCity =
+    requestCityMatch?.visitor_city || vipCityMatch?.home_city || vipCityMatch?.visitor_city || expCityMatch?.visitor_city || null
+  const displayRegion = requestCityMatch?.visitor_city
+    ? requestCityMatch.visitor_region
+    : vipCityMatch?.home_city
+      ? null
+      : vipCityMatch?.visitor_city
+        ? vipCityMatch.visitor_region
+        : expCityMatch?.visitor_city
+          ? expCityMatch.visitor_region
+          : null
 
   const isBachelorette =
     requests.some((r) => r.celebration_type === 'Bachelorette') ||
@@ -291,6 +310,16 @@ export function GuestProfileContent({
               </button>
             </div>
           </div>
+
+          {displayCity && (
+            <div className="flex items-center gap-2 text-sm">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <span>
+                {displayCity}
+                {displayRegion ? `, ${displayRegion}` : ''}
+              </span>
+            </div>
+          )}
 
           {displayEmail && (
             <div className="flex items-center justify-between gap-2">
@@ -675,7 +704,7 @@ export function GuestProfileContent({
                   id="editPhone"
                   type="tel"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(e) => setForm({ ...form, phone: formatPhoneInput(e.target.value) })}
                 />
               </div>
               <div className="space-y-2">

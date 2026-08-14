@@ -40,19 +40,6 @@ const TIME_SLOTS = [
   { value: 'evening', label: '8pm - 11pm', description: 'Night cruise' },
 ]
 
-const BUDGET_OPTIONS_PUBLIC = [
-  { value: '40-60pp', label: '$40-60 per person' },
-  { value: '60-80pp', label: '$60-80 per person' },
-  { value: '80-100pp', label: '$80-100 per person' },
-]
-
-const BUDGET_OPTIONS_PRIVATE = [
-  { value: '2000-4000', label: '$2,000 - $4,000' },
-  { value: '4000-6000', label: '$4,000 - $6,000' },
-  { value: '6000-10000', label: '$6,000 - $10,000' },
-  { value: '10000+', label: '$10,000+' },
-]
-
 const AMENITY_OPTIONS = [
   { value: 'open_bar', label: 'Open Bar' },
   { value: 'dj', label: 'DJ / Sound System' },
@@ -75,7 +62,6 @@ export default function BoatDayPage() {
     cruiseType: '',
     timeSlot: '',
     departureLocation: 'Navy Pier',
-    budgetRange: '',
     amenities: [] as string[],
     occasion: '',
     specialRequests: '',
@@ -132,7 +118,6 @@ export default function BoatDayPage() {
   }
 
   const isPrivateCharter = form.cruiseType === 'private_charter'
-  const budgetOptions = isPrivateCharter ? BUDGET_OPTIONS_PRIVATE : BUDGET_OPTIONS_PUBLIC
 
   if (isSubmitted) {
     return (
@@ -302,7 +287,7 @@ export default function BoatDayPage() {
                 <button
                   key={type.value}
                   type="button"
-                  onClick={() => updateForm({ cruiseType: type.value, budgetRange: '' })}
+                  onClick={() => updateForm({ cruiseType: type.value })}
                   className={`p-5 rounded-xl border text-left transition-all ${
                     form.cruiseType === type.value
                       ? 'border-gold bg-gold/10'
@@ -460,28 +445,6 @@ export default function BoatDayPage() {
                   </div>
                 )}
 
-                {/* Budget */}
-                <div className="border-t border-border/30 pt-6">
-                  <h3 className="font-medium mb-4">
-                    {isPrivateCharter ? 'Budget Range (total)' : 'Budget Range (per person)'}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {budgetOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => updateForm({ budgetRange: option.value })}
-                        className={`p-3 rounded-xl border text-center transition-all ${
-                          form.budgetRange === option.value
-                            ? 'border-gold bg-gold/10 text-gold'
-                            : 'border-border/50 hover:border-gold/30'
-                        }`}
-                      >
-                        <p className="text-sm">{option.label}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>

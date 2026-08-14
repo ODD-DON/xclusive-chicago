@@ -4,9 +4,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowRight, Bus, Ship, Wine, Calendar, MapPin } from 'lucide-react'
+import { ArrowRight, Bus, Ship, Wine, Calendar, MapPin, Users, Plane } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Event, Club } from '@/lib/types'
+import { Event, Club, CLUB_SIZE_LABELS } from '@/lib/types'
 import { computeAccessStatus, ACCESS_STATUS_LABELS } from '@/lib/access-status'
 
 interface HomeContentProps {
@@ -118,74 +118,115 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
         </motion.div>
       </section>
 
-      {events.length > 0 && (
-        <section className="relative z-10 py-20 px-4 bg-background/95 backdrop-blur-sm">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-12"
-            >
-              <p className="text-gold text-sm tracking-[0.2em] uppercase mb-3">Right Now</p>
-              <h2 className="text-2xl md:text-3xl font-light">
-                Current <span className="text-gold-gradient font-medium">Releases</span>
-              </h2>
-            </motion.div>
+      <section className="relative z-10 py-20 px-4 bg-background/95 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <p className="text-gold text-sm tracking-[0.2em] uppercase mb-3">Right Now</p>
+            <h2 className="text-2xl md:text-3xl font-light">
+              Current <span className="text-gold-gradient font-medium">Releases</span>
+            </h2>
+          </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {events.map((event, index) => {
-                const dateObj = parseISO(event.event_date)
-                const isToday = isSameDay(dateObj, new Date())
-                const venueName = event.club?.name || event.scraped_venue_name
-                const image = event.use_venue_branding
-                  ? event.club?.image_url || event.image_url
-                  : event.image_url || event.club?.image_url
-                const status = computeAccessStatus(event, approvedCounts[event.id] || 0)
-
-                return (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: index * 0.05 }}
-                  >
-                    <Link href="/guestlist" className="block group">
-                      <div className="flex gap-4 bg-card border border-border/50 rounded-2xl p-3 h-full transition-all duration-300 hover:border-gold/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
-                        <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-muted">
-                          {image ? (
-                            <Image src={image} alt={event.title || 'Event'} fill className="object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-gold/20 to-transparent" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex flex-col justify-center">
-                          <p className="text-xs text-gold flex items-center gap-1 mb-1">
-                            <Calendar className="w-3 h-3" />
-                            {isToday ? 'Tonight' : format(dateObj, 'EEE, MMM d')}
-                          </p>
-                          <h3 className="font-medium truncate group-hover:text-gold transition-colors">
-                            {event.use_venue_branding && venueName ? venueName : event.title}
-                          </h3>
-                          {venueName && !event.use_venue_branding && (
-                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3 shrink-0" />
-                              {venueName}
-                            </p>
-                          )}
-                          <span className="text-xs text-muted-foreground mt-1">{ACCESS_STATUS_LABELS[status]}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                )
-              })}
+          {events.length === 0 ? (
+            <div className="bg-card border border-border/50 rounded-2xl p-8 text-center max-w-lg mx-auto">
+              <Calendar className="w-10 h-10 text-gold mx-auto mb-4" />
+              <h3 className="font-medium mb-2">No releases posted yet</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                New releases go up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
+                need something locked in before your trip? Don&apos;t wait on a release — book VIP table access in
+                advance instead.
+              </p>
+              <Link href="/experiences/vip-tables">
+                <Button className="bg-gold hover:bg-gold-light text-background">
+                  <Plane className="w-4 h-4 mr-2" />
+                  Plan Ahead with VIP Tables
+                </Button>
+              </Link>
             </div>
-          </div>
-        </section>
-      )}
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {events.map((event, index) => {
+                  const dateObj = parseISO(event.event_date)
+                  const isToday = isSameDay(dateObj, new Date())
+                  const venueName = event.club?.name || event.scraped_venue_name
+                  const neighborhood = event.club?.neighborhood
+                  const sizeLabel = event.club?.size ? CLUB_SIZE_LABELS[event.club.size] : null
+                  const image = event.use_venue_branding
+                    ? event.club?.image_url || event.image_url
+                    : event.image_url || event.club?.image_url
+                  const status = computeAccessStatus(event, approvedCounts[event.id] || 0)
+
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: index * 0.05 }}
+                    >
+                      <Link href="/guestlist" className="block group">
+                        <div className="flex gap-4 bg-card border border-border/50 rounded-2xl p-3 h-full transition-all duration-300 hover:border-gold/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
+                          <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-muted">
+                            {image ? (
+                              <Image src={image} alt={event.title || 'Event'} fill className="object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-gold/20 to-transparent" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex flex-col justify-center">
+                            <p className="text-sm font-semibold text-gold flex items-center gap-1.5 mb-1">
+                              <Calendar className="w-3.5 h-3.5 shrink-0" />
+                              {isToday ? 'Tonight' : format(dateObj, 'EEEE, MMM d')}
+                            </p>
+                            <h3 className="font-medium truncate group-hover:text-gold transition-colors">
+                              {event.use_venue_branding && venueName ? venueName : event.title}
+                            </h3>
+                            {venueName && !event.use_venue_branding && (
+                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-3 h-3 shrink-0" />
+                                {venueName}
+                                {neighborhood && ` · ${neighborhood}`}
+                              </p>
+                            )}
+                            {sizeLabel && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Users className="w-3 h-3 shrink-0" />
+                                {sizeLabel.label} ({sizeLabel.capacity})
+                              </p>
+                            )}
+                            <span className="text-xs text-muted-foreground mt-1">{ACCESS_STATUS_LABELS[status]}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  )
+                })}
+              </div>
+
+              <div className="bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-sm text-muted-foreground">
+                  <span className="text-gold font-medium">Coming from out of town?</span> Don&apos;t see a release
+                  for your date yet — releases go up weekly, but you can lock in VIP table access now instead of
+                  waiting.
+                </p>
+                <Link
+                  href="/experiences/vip-tables"
+                  className="text-sm font-medium text-gold hover:underline shrink-0 flex items-center gap-1"
+                >
+                  Plan Ahead <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
       <section className="relative z-10 py-20 px-4 bg-background/95 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto">

@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
-import { Club, CLUB_SIZES, MUSIC_STYLES, ClubSize, MusicStyle } from '@/lib/types'
+import { Club, CLUB_SIZES, CLUB_SIZE_LABELS, MUSIC_STYLES, ClubSize, MusicStyle } from '@/lib/types'
 import { NotesEditor } from './notes-editor'
 
 function FormSection({
@@ -47,13 +47,6 @@ function FormSection({
 interface ClubFormProps {
   club?: Club
   initialNotes?: string
-}
-
-const SIZE_LABELS: Record<ClubSize, { label: string; capacity: string }> = {
-  intimate: { label: 'Intimate', capacity: '< 200' },
-  medium: { label: 'Medium', capacity: '200-500' },
-  large: { label: 'Large', capacity: '500-1000' },
-  mega: { label: 'Mega', capacity: '1000+' },
 }
 
 export function ClubForm({ club, initialNotes }: ClubFormProps) {
@@ -442,8 +435,8 @@ export function ClubForm({ club, initialNotes }: ClubFormProps) {
                       }`}
                     >
                       <Users className="w-4 h-4 mx-auto mb-1" />
-                      <div className="text-xs font-medium">{SIZE_LABELS[size].label}</div>
-                      <div className="text-[10px] opacity-70">{SIZE_LABELS[size].capacity}</div>
+                      <div className="text-xs font-medium">{CLUB_SIZE_LABELS[size].label}</div>
+                      <div className="text-[10px] opacity-70">{CLUB_SIZE_LABELS[size].capacity}</div>
                     </button>
                   ))}
                 </div>

@@ -3,6 +3,13 @@ export const APP_ID = 'xclusive_chicago'
 export const CLUB_SIZES = ['intimate', 'medium', 'large', 'mega'] as const
 export type ClubSize = (typeof CLUB_SIZES)[number]
 
+export const CLUB_SIZE_LABELS: Record<ClubSize, { label: string; capacity: string }> = {
+  intimate: { label: 'Intimate', capacity: '< 200' },
+  medium: { label: 'Medium', capacity: '200-500' },
+  large: { label: 'Large', capacity: '500-1000' },
+  mega: { label: 'Mega', capacity: '1000+' },
+}
+
 export const MUSIC_STYLES = [
   'House',
   'Techno',

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowLeft, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, ChevronRight, Users, Plane } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
-import { Event, Club, CELEBRATION_TYPES } from '@/lib/types'
+import { Event, Club, CELEBRATION_TYPES, CLUB_SIZE_LABELS } from '@/lib/types'
 import {
   computeAccessStatus,
   remainingPasses,
@@ -78,23 +78,41 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
             <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-gold" />
             </div>
-            <h3 className="text-lg font-medium mb-2">No releases right now</h3>
+            <h3 className="text-lg font-medium mb-2">No releases posted yet</h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-              New releases are added regularly. Check back soon.
+              New releases go up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
+              need something locked in before your trip? Don&apos;t wait on a release — book VIP table access in
+              advance instead.
             </p>
-            <div className="bg-card border border-border/50 rounded-xl p-4 max-w-sm mx-auto">
-              <p className="text-sm text-muted-foreground">
-                <span className="text-gold font-medium">Pro tip:</span> Follow us on Instagram for first access and announcements.
-              </p>
-            </div>
+            <Link href="/experiences/vip-tables">
+              <Button className="bg-gold hover:bg-gold-light text-background">
+                <Plane className="w-4 h-4 mr-2" />
+                Plan Ahead with VIP Tables
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-sm text-muted-foreground">
+                <span className="text-gold font-medium">Coming from out of town?</span> Don&apos;t see a release for
+                your date yet — releases go up weekly, but you can lock in VIP table access now instead of waiting.
+              </p>
+              <Link
+                href="/experiences/vip-tables"
+                className="text-sm font-medium text-gold hover:underline shrink-0 flex items-center gap-1"
+              >
+                Plan Ahead <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
             {events.map((event) => {
               const dateObj = parseISO(event.event_date)
               const isToday = isSameDay(dateObj, new Date())
               const venueName = event.club?.name || event.scraped_venue_name
               const venueAddress = event.club?.address || event.scraped_venue_address
+              const neighborhood = event.club?.neighborhood
+              const sizeLabel = event.club?.size ? CLUB_SIZE_LABELS[event.club.size] : null
               const image = event.use_venue_branding
                 ? event.club?.image_url || event.image_url
                 : event.image_url || event.club?.image_url
@@ -122,8 +140,8 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                       </div>
                     )}
 
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 text-xs font-medium bg-background/90 backdrop-blur-sm text-gold px-2.5 py-1.5 rounded-full border border-gold/20">
-                      <Calendar className="w-3 h-3" />
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 text-sm font-semibold bg-background/90 backdrop-blur-sm text-gold px-3 py-1.5 rounded-full border border-gold/30">
+                      <Calendar className="w-3.5 h-3.5" />
                       <span>
                         {isToday ? 'Tonight' : format(dateObj, 'EEE, MMM d')}
                       </span>
@@ -139,6 +157,10 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
 
                   <div className="p-4 space-y-3">
                     <div>
+                      <p className="text-base font-bold text-gold flex items-center gap-1.5 mb-1.5">
+                        <Calendar className="w-4 h-4 shrink-0" />
+                        {isToday ? 'Tonight' : format(dateObj, 'EEEE, MMMM d')}
+                      </p>
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="text-lg font-semibold">
                           {event.use_venue_branding && venueName ? venueName : event.title}
@@ -157,6 +179,7 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                               <span className="truncate">
                                 {event.use_venue_branding ? venueAddress || venueName : venueName}
                                 {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
+                                {neighborhood ? ` · ${neighborhood}` : ''}
                               </span>
                               <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                             </Link>
@@ -164,8 +187,17 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                             <span className="truncate">
                               {event.use_venue_branding ? venueAddress || venueName : venueName}
                               {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
+                              {neighborhood ? ` · ${neighborhood}` : ''}
                             </span>
                           )}
+                        </div>
+                      )}
+                      {sizeLabel && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-0.5">
+                          <Users className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            {sizeLabel.label} venue ({sizeLabel.capacity} capacity)
+                          </span>
                         </div>
                       )}
                     </div>

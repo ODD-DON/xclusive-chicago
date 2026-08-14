@@ -5,7 +5,7 @@ import { HomeContent } from './home-content'
 
 export const dynamic = 'force-dynamic'
 
-async function getCurrentDrops() {
+async function getCurrentReleases() {
   const supabase = createServiceClient()
 
   const todayStr = chicagoTodayStr()
@@ -51,6 +51,6 @@ async function getCurrentDrops() {
 }
 
 export default async function HomePage() {
-  const { events, approvedCounts } = await getCurrentDrops()
+  const { events, approvedCounts } = await getCurrentReleases()
   return <HomeContent events={events} approvedCounts={approvedCounts} />
 }

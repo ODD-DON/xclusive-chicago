@@ -28,7 +28,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
       </div>
 
-      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-20">
+      <section className="relative z-10 min-h-dvh flex flex-col items-center justify-center px-4 py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

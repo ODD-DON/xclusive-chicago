@@ -35,8 +35,9 @@ export default function PrivacyPage() {
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8">Privacy Policy</h1>
-        
+        <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: August 14, 2026</p>
+
         <div className="prose prose-invert prose-gold max-w-none space-y-6 text-foreground/90">
           <p className="text-muted-foreground">
             Xclusive Chicago respects your privacy. This Privacy Policy explains how we collect, use, and protect your information.
@@ -74,6 +75,34 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-foreground mb-3">Data Security</h2>
             <p className="text-muted-foreground">
               We take reasonable measures to protect your information.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Data Retention</h2>
+            <p className="text-muted-foreground">
+              We retain your information for as long as needed to provide our guestlist services and comply with
+              legal, tax, and recordkeeping obligations. You may request deletion of your information at any time
+              by contacting us at the email below; we will honor that request except where we are required to
+              retain certain records by law.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Your Rights</h2>
+            <p className="text-muted-foreground">
+              Depending on where you live, you may have the right to access, correct, or delete the personal
+              information we hold about you, and to opt out of certain uses of it. This includes rights available
+              to California residents under the California Consumer Privacy Act (CCPA). To exercise any of these
+              rights, contact us at the email below.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Children&apos;s Privacy</h2>
+            <p className="text-muted-foreground">
+              Our services are intended for guests 21 and older and are not directed to children. We do not
+              knowingly collect personal information from anyone under 18.
             </p>
           </section>
 

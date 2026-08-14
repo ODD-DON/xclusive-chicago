@@ -35,8 +35,9 @@ export default function TermsPage() {
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8">Terms & Conditions</h1>
-        
+        <h1 className="text-3xl font-bold mb-2">Terms & Conditions</h1>
+        <p className="text-sm text-muted-foreground mb-8">Last updated: August 14, 2026</p>
+
         <div className="prose prose-invert prose-gold max-w-none space-y-6 text-foreground/90">
           <p className="text-muted-foreground">
             By signing up for the Xclusive Chicago guestlist and providing your phone number, you agree to receive SMS messages related to event guestlists, confirmations, reminders, and updates.

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
+import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+
+const EXPERIENCE_LABELS: Record<string, string> = {
+  party_bus: 'Party Bus',
+  boat_day: 'Boat Day',
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,6 +86,13 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    const cleanPhone = phone.replace(/\D/g, '')
+    await sendAdminPush({
+      title: `New ${EXPERIENCE_LABELS[experienceType] || experienceType} Inquiry`,
+      body: `${firstName} ${lastName} · ${formatPhoneForPush(cleanPhone)}${groupSize ? ` · ${groupSize} people` : ''}`,
+      url: '/admin/experiences',
+    })
 
     return NextResponse.json({ success: true, inquiry: data })
   } catch (error) {

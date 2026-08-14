@@ -11,6 +11,7 @@ import {
   Calendar,
   Users,
   Wine,
+  Bus,
   Menu,
   X,
   ChevronRight,
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/guests', label: 'Guests', icon: Users },
   { href: '/admin/vip', label: 'VIP Requests', icon: Wine },
+  { href: '/admin/experiences', label: 'Experiences', icon: Bus },
 ]
 
 export default function AdminLayout({

@@ -654,6 +654,29 @@ export default function PartyBusPage() {
               </div>
             </div>
 
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email (optional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => updateForm({ email: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram (optional)</Label>
+                <Input
+                  id="instagram"
+                  value={form.instagram}
+                  onChange={(e) => updateForm({ instagram: e.target.value })}
+                  placeholder="@yourhandle"
+                  className="bg-background"
+                />
+              </div>
+            </div>
+
             <label className="flex items-center gap-2 cursor-pointer mt-4">
               <input
                 type="checkbox"

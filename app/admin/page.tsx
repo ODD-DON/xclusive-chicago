@@ -40,7 +40,7 @@ async function getStats() {
     .from('xc_access_requests')
     .select('*', { count: 'exact', head: true })
     .eq('app_id', APP_ID)
-    .eq('status', 'pending')
+    .or('status.eq.pending,and(status.eq.approved,rsvp_completed_at.is.null)')
 
   // VIP interest across both the day-of request form and the advance inquiry form
   const [{ count: vipRequestCount }, { count: vipInquiryCount }] = await Promise.all([

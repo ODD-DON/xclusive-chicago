@@ -130,6 +130,35 @@ export interface AccessRequest {
   event?: Event & { club: Club | null }
 }
 
+export interface ExperienceInquiry {
+  id: string
+  app_id: string
+  experience_type: string
+  first_name: string
+  last_name: string
+  phone: string
+  email: string | null
+  instagram: string | null
+  preferred_date: string | null
+  flexible_dates: boolean
+  group_size: number | null
+  pickup_location: string | null
+  dropoff_location: string | null
+  duration_hours: number | null
+  cruise_type: string | null
+  departure_location: string | null
+  venue_preference: string | null
+  bottle_budget: string | null
+  special_requests: string | null
+  budget_range: string | null
+  how_heard: string | null
+  details: Record<string, unknown> | null
+  status: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Schedule {
   id: string
   app_id: string

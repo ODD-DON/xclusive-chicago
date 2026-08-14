@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
@@ -458,25 +459,37 @@ function GuestRow({
   // exactly that instead of overclaiming "confirmed."
   const rsvpNotStarted = displayRequest?.status === 'approved' && !displayRequest.rsvp_completed_at
   const rsvpOpened = displayRequest?.status === 'approved' && !!displayRequest.rsvp_completed_at
+  const eventThumbnail = displayRequest?.event?.image_url || displayRequest?.event?.club?.image_url
 
   return (
     <div className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1.3fr_auto] sm:items-center">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href={`/admin/guests/${member.id}`}
-            className="font-medium hover:text-gold hover:underline transition-colors"
-          >
-            {member.first_name} {member.last_name}
-          </Link>
-          {!!repeatCount && repeatCount > 1 && (
-            <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
-              <Repeat className="w-3 h-3 mr-1" />
-              {repeatCount}
-            </Badge>
-          )}
+      <div className="flex items-center gap-3 min-w-0">
+        {eventThumbnail ? (
+          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted" title={displayRequest?.event?.title || undefined}>
+            <Image src={eventThumbnail} alt={displayRequest?.event?.title || 'Event'} fill className="object-cover" />
+          </div>
+        ) : displayRequest?.event ? (
+          <div className="w-10 h-10 rounded-lg shrink-0 bg-muted flex items-center justify-center">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+          </div>
+        ) : null}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href={`/admin/guests/${member.id}`}
+              className="font-medium hover:text-gold hover:underline transition-colors"
+            >
+              {member.first_name} {member.last_name}
+            </Link>
+            {!!repeatCount && repeatCount > 1 && (
+              <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
+                <Repeat className="w-3 h-3 mr-1" />
+                {repeatCount}
+              </Badge>
+            )}
+          </div>
+          {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
         </div>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
       </div>
 
       <div className="flex flex-col gap-1 text-sm text-muted-foreground min-w-0">

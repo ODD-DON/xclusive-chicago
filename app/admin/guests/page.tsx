@@ -12,7 +12,7 @@ async function getData() {
     .select(`
       *,
       member:xc_members(*),
-      event:xc_events(id, title, event_date, club:xc_clubs(name))
+      event:xc_events(id, title, event_date, image_url, club:xc_clubs(name, image_url))
     `)
     .eq('app_id', APP_ID)
     .order('requested_at', { ascending: false })

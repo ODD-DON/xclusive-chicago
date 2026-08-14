@@ -538,7 +538,7 @@ export function EventsContent({
 
       {/* Add Event Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[85dvh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>{editingEventId ? 'Edit Event' : 'Add Event'}</DialogTitle>
           </DialogHeader>

@@ -45,7 +45,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
-    await supabase.from('xc_push_subscriptions').delete().eq('endpoint', endpoint)
+    await supabase.from('xc_push_subscriptions').delete().eq('endpoint', endpoint).eq('app_id', APP_ID)
 
     return NextResponse.json({ success: true })
   } catch (error) {

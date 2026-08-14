@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { APP_ID } from '@/lib/types'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -23,6 +24,7 @@ export async function PUT(request: NextRequest) {
         approved_at: status === 'approved' ? new Date().toISOString() : null,
       })
       .eq('id', id)
+      .eq('app_id', APP_ID)
 
     if (error) {
       console.error('Update access request error:', error)

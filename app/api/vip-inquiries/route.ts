@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+import { getVisitorGeo } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
       budget,
       venuePreference,
       outOfTown,
+      homeCity,
       celebrationType,
       celebrationOther,
       smsConsent,
@@ -37,6 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
+    const { city: visitorCity, region: visitorRegion } = getVisitorGeo(request)
 
     const { data: inquiry, error } = await supabase
       .from('xc_vip_inquiries')
@@ -52,10 +55,13 @@ export async function POST(request: NextRequest) {
         budget: budget || null,
         venue_preference: venuePreference || null,
         out_of_town: !!outOfTown,
+        home_city: homeCity || null,
         celebration_type: celebrationType || null,
         celebration_other: celebrationOther || null,
         sms_consent: !!smsConsent,
         notes: notes || null,
+        visitor_city: visitorCity,
+        visitor_region: visitorRegion,
       })
       .select('id')
       .single()

@@ -66,6 +66,7 @@ export default function BoatDayPage() {
     amenities: [] as string[],
     celebrationType: '',
     celebrationOther: '',
+    homeCity: '',
     specialRequests: '',
   })
 
@@ -334,6 +335,18 @@ export default function BoatDayPage() {
                 className="bg-background mt-3"
               />
             )}
+          </div>
+
+          {/* Home City -- optional, not gated behind cruise type */}
+          <div className="space-y-2">
+            <Label htmlFor="homeCity">Traveling in for this? (optional)</Label>
+            <Input
+              id="homeCity"
+              value={form.homeCity}
+              onChange={(e) => updateForm({ homeCity: e.target.value })}
+              placeholder="Which city are you coming from?"
+              className="bg-background"
+            />
           </div>
 
           {/* Cruise Type Selection */}

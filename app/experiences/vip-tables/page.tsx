@@ -26,6 +26,7 @@ export default function VipTablesPage() {
   const [budget, setBudget] = useState('')
   const [venuePreference, setVenuePreference] = useState('')
   const [outOfTown, setOutOfTown] = useState(false)
+  const [homeCity, setHomeCity] = useState('')
   const [celebrationType, setCelebrationType] = useState('')
   const [celebrationOther, setCelebrationOther] = useState('')
   const [smsConsent, setSmsConsent] = useState(false)
@@ -67,6 +68,7 @@ export default function VipTablesPage() {
           budget: budget || null,
           venuePreference: venuePreference.trim() || null,
           outOfTown,
+          homeCity: outOfTown ? homeCity.trim() || null : null,
           celebrationType: celebrationType || null,
           celebrationOther: celebrationType === 'Other' ? celebrationOther.trim() || null : null,
           smsConsent,
@@ -310,6 +312,15 @@ export default function VipTablesPage() {
                 </div>
                 <span className="text-sm">I&apos;m coming from out of town</span>
               </label>
+
+              {outOfTown && (
+                <Input
+                  value={homeCity}
+                  onChange={(e) => setHomeCity(e.target.value)}
+                  placeholder="Which city are you traveling from?"
+                  className="bg-muted border-border/50"
+                />
+              )}
 
               <div className="space-y-2">
                 <Label>Celebrating something? (optional)</Label>

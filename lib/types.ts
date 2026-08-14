@@ -133,6 +133,8 @@ export interface AccessRequest {
   interest_boat: boolean
   interest_party_bus: boolean
   referred_by_code: string | null
+  visitor_city: string | null
+  visitor_region: string | null
   member?: Member
   event?: Event & { club: Club | null }
 }
@@ -162,6 +164,8 @@ export interface ExperienceInquiry {
   details: Record<string, unknown> | null
   status: string
   notes: string | null
+  visitor_city: string | null
+  visitor_region: string | null
   created_at: string
   updated_at: string
 }
@@ -228,10 +232,13 @@ export interface VipInquiry {
   budget: string | null
   venue_preference: string | null
   out_of_town: boolean
+  home_city: string | null
   celebration_type: string | null
   celebration_other: string | null
   sms_consent: boolean
   notes: string | null
   status: string
+  visitor_city: string | null
+  visitor_region: string | null
   created_at: string
 }

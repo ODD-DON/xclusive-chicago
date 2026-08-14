@@ -72,6 +72,7 @@ export function PartyBusContent() {
     // General
     celebrationType: '',
     celebrationOther: '',
+    homeCity: '',
     specialRequests: '',
   })
 
@@ -627,6 +628,17 @@ export function PartyBusContent() {
               />
               <span className="text-sm text-muted-foreground">I&apos;m flexible on dates</span>
             </label>
+
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="homeCity">Traveling in for this? (optional)</Label>
+              <Input
+                id="homeCity"
+                value={form.homeCity}
+                onChange={(e) => updateForm({ homeCity: e.target.value })}
+                placeholder="Which city are you coming from?"
+                className="bg-background"
+              />
+            </div>
           </div>
 
           {/* Special Requests */}

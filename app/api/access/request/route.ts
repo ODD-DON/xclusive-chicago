@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { nanoid } from 'nanoid'
 import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+import { getVisitorGeo } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     const accessCode = nanoid(10)
+    const { city: visitorCity, region: visitorRegion } = getVisitorGeo(request)
 
     let referredByCode: string | null = null
     if (referredBy && typeof referredBy === 'string') {
@@ -131,6 +133,8 @@ export async function POST(request: NextRequest) {
       interest_boat: !!interestBoat,
       interest_party_bus: !!interestPartyBus,
       referred_by_code: referredByCode,
+      visitor_city: visitorCity,
+      visitor_region: visitorRegion,
     })
 
     if (requestError) {

@@ -17,6 +17,7 @@ import {
   MapPin,
   Plane,
   Sparkles,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -219,6 +220,15 @@ function InquiryCard({ inquiry, highlighted }: { inquiry: VipInquiry; highlighte
                   <span>{inquiry.venue_preference}</span>
                 </div>
               )}
+              {(inquiry.home_city || inquiry.visitor_city) && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Globe className="w-4 h-4" />
+                  <span>
+                    {inquiry.home_city || inquiry.visitor_city}
+                    {!inquiry.home_city && inquiry.visitor_city && ' (detected)'}
+                  </span>
+                </div>
+              )}
               {inquiry.celebration_type && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Sparkles className="w-4 h-4" />
@@ -288,6 +298,8 @@ function InquiryExportButton({ inquiries }: { inquiries: VipInquiry[] }) {
       'Budget',
       'Venue Preference',
       'Out of Town',
+      'Home City',
+      'Detected City',
       'Celebration',
       'Notes',
       'Requested At',
@@ -303,6 +315,8 @@ function InquiryExportButton({ inquiries }: { inquiries: VipInquiry[] }) {
       inq.budget || '',
       inq.venue_preference || '',
       inq.out_of_town ? 'Yes' : 'No',
+      inq.home_city || '',
+      inq.visitor_city || '',
       inq.celebration_type === 'Other' ? inq.celebration_other || '' : inq.celebration_type || '',
       inq.notes || '',
       format(new Date(inq.created_at), 'yyyy-MM-dd HH:mm'),

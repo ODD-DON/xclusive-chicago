@@ -1,7 +1,7 @@
 'use client'
 
 import { format } from 'date-fns'
-import { Bus, Ship, Phone, MessageCircle, Mail, Instagram, Users, Calendar, Download, FileText } from 'lucide-react'
+import { Bus, Ship, Phone, MessageCircle, Mail, Instagram, Users, Calendar, Download, FileText, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -162,6 +162,12 @@ function InquiryList({ inquiries, emptyLabel }: { inquiries: ExperienceInquiry[]
                       <div className="text-muted-foreground">Departs: {inquiry.departure_location}</div>
                     )}
                     {inquiry.budget_range && <div className="text-muted-foreground">Budget: {inquiry.budget_range}</div>}
+                    {inquiry.visitor_city && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Globe className="w-4 h-4" />
+                        {inquiry.visitor_city} (detected)
+                      </div>
+                    )}
                   </div>
 
                   {detailEntries.length > 0 && (
@@ -210,6 +216,7 @@ function ExportButton({ inquiries, label }: { inquiries: ExperienceInquiry[]; la
       'Group Size',
       'Budget',
       'Special Requests',
+      'Detected City',
       'Details',
       'Requested At',
     ]
@@ -225,6 +232,7 @@ function ExportButton({ inquiries, label }: { inquiries: ExperienceInquiry[]; la
       i.group_size != null ? String(i.group_size) : '',
       i.budget_range || i.bottle_budget || '',
       i.special_requests || '',
+      i.visitor_city || '',
       i.details ? JSON.stringify(i.details) : '',
       format(new Date(i.created_at), 'yyyy-MM-dd HH:mm'),
     ])

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+import { getVisitorGeo } from '@/lib/geo'
 
 const EXPERIENCE_LABELS: Record<string, string> = {
   party_bus: 'Party Bus',
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const supabase = createServiceClient()
+    const { city: visitorCity, region: visitorRegion } = getVisitorGeo(request)
 
     const {
       experienceType,
@@ -68,6 +70,8 @@ export async function POST(request: NextRequest) {
         budget_range: budgetRange || null,
         details: Object.keys(details).length > 0 ? details : null,
         status: 'new',
+        visitor_city: visitorCity,
+        visitor_region: visitorRegion,
       })
       .select()
       .single()

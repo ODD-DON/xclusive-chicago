@@ -58,6 +58,12 @@ export async function middleware(request: NextRequest) {
   }
 
   const loginUrl = new URL('/admin/login', request.url)
+  // Distinguish "never signed in" from "signed in but not an admin" so the
+  // login page can explain why it's bouncing them back instead of looking
+  // like the login silently failed.
+  if (user) {
+    loginUrl.searchParams.set('error', 'not_admin')
+  }
   return NextResponse.redirect(loginUrl)
 }
 

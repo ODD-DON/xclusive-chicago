@@ -17,10 +17,15 @@ import {
   Sparkles,
   Users,
   MessageSquare,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import type { AccessRequest, Member } from '@/lib/types'
 
@@ -51,9 +56,68 @@ function copyToClipboard(value: string, label: string) {
     .catch(() => toast.error('Could not copy'))
 }
 
-export function GuestProfileContent({ member, accessRequests: initialRequests }: Props) {
+export function GuestProfileContent({ member: initialMember, accessRequests: initialRequests }: Props) {
   const router = useRouter()
+  const [member, setMember] = useState(initialMember)
   const [requests, setRequests] = useState(initialRequests)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [form, setForm] = useState({
+    first_name: member.first_name,
+    last_name: member.last_name,
+    phone: member.phone,
+    email: member.email || '',
+    instagram: member.instagram || '',
+  })
+
+  const openEdit = () => {
+    setForm({
+      first_name: member.first_name,
+      last_name: member.last_name,
+      phone: member.phone,
+      email: member.email || '',
+      instagram: member.instagram || '',
+    })
+    setIsEditOpen(true)
+  }
+
+  const saveEdit = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/admin/members', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: member.id, ...form }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to update guest')
+      setMember(data.member)
+      setIsEditOpen(false)
+      toast.success('Guest updated')
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update guest')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const deleteMember = async () => {
+    if (!confirm(`Delete ${member.first_name} ${member.last_name}? This can't be undone.`)) return
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/members?id=${member.id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to delete guest')
+      toast.success('Guest deleted')
+      router.push('/admin/guests')
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete guest')
+      setIsDeleting(false)
+    }
+  }
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -97,7 +161,24 @@ export function GuestProfileContent({ member, accessRequests: initialRequests }:
             {member.source || 'unknown'}
           </p>
         </div>
-        <Badge className="capitalize">{member.member_status}</Badge>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge className="capitalize">{member.member_status}</Badge>
+          <Button size="sm" variant="outline" onClick={openEdit}>
+            <Pencil className="w-3.5 h-3.5 mr-1.5" />
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={deleteMember}
+            disabled={isDeleting || requests.length > 0}
+            title={requests.length > 0 ? "Can't delete a guest with request history" : undefined}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            Delete
+          </Button>
+        </div>
       </div>
 
       <Card className="bg-card border-border/50">
@@ -243,6 +324,69 @@ export function GuestProfileContent({ member, accessRequests: initialRequests }:
           </div>
         )}
       </div>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Guest</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input
+                  id="editFirstName"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input
+                  id="editLastName"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPhone">Phone</Label>
+              <Input
+                id="editPhone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editEmail">Email</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editInstagram">Instagram</Label>
+              <Input
+                id="editInstagram"
+                value={form.instagram}
+                onChange={(e) => setForm({ ...form, instagram: e.target.value })}
+                placeholder="@handle"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit} disabled={isSaving} className="bg-gold hover:bg-gold-light text-background">
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

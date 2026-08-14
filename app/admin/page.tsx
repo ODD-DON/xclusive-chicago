@@ -3,7 +3,7 @@ import { APP_ID } from '@/lib/types'
 import { chicagoTodayStr } from '@/lib/date'
 
 export const dynamic = 'force-dynamic'
-import { format, addDays } from 'date-fns'
+import { format } from 'date-fns'
 import { Building2, Calendar, Users, Wine, Clock, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
@@ -11,7 +11,6 @@ import Link from 'next/link'
 async function getStats() {
   const supabase = createServiceClient()
   const todayStr = chicagoTodayStr()
-  const futureStr = format(addDays(new Date(`${todayStr}T12:00:00`), 56), 'yyyy-MM-dd')
 
   // Active clubs
   const { count: clubCount } = await supabase
@@ -20,14 +19,15 @@ async function getStats() {
     .eq('app_id', APP_ID)
     .eq('is_active', true)
 
-  // Upcoming events (next 8 weeks)
+  // Upcoming events -- no future cutoff, matching the Events admin
+  // page, so this card's number always matches what clicking through
+  // to it actually shows.
   const { count: eventCount } = await supabase
     .from('xc_events')
     .select('*', { count: 'exact', head: true })
     .eq('app_id', APP_ID)
     .eq('is_active', true)
     .gte('event_date', todayStr)
-    .lte('event_date', futureStr)
 
   // Total members
   const { count: totalMembers } = await supabase

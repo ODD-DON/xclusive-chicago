@@ -149,7 +149,7 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
   const [displayMode, setDisplayMode] = useState<'guests' | 'events' | 'date'>('guests')
   const initialTab = searchParams.get('tab')
   const [sourceTab, setSourceTab] = useState<SourceTab>(
-    initialTab === 'vip' || initialTab === 'experiences' || initialTab === 'all' ? initialTab : 'guestlist',
+    initialTab === 'vip' || initialTab === 'experiences' || initialTab === 'guestlist' ? initialTab : 'all',
   )
   const highlightId = searchParams.get('inquiry')
   const [unreadCounts, setUnreadCounts] = useState<{ vip: number; experiences: number }>({ vip: 0, experiences: 0 })
@@ -649,7 +649,7 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
         ) : (
           <div className="space-y-6">
             {visibleEventGroups.map((g) => (
-              <EventGroupCard key={g.event?.id} group={g} onApprove={updateStatus} onDeny={updateStatus} />
+              <EventGroupCard key={g.event?.id} group={g} />
             ))}
           </div>
         )
@@ -667,7 +667,7 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
                 Upcoming Events ({upcomingEventGroups.length})
               </h2>
               {upcomingEventGroups.map((g) => (
-                <EventGroupCard key={g.event?.id} group={g} onApprove={updateStatus} onDeny={updateStatus} />
+                <EventGroupCard key={g.event?.id} group={g} />
               ))}
             </div>
           )}
@@ -677,7 +677,7 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
                 Past Events ({pastEventGroups.length})
               </h2>
               {pastEventGroups.map((g) => (
-                <EventGroupCard key={g.event?.id} group={g} onApprove={updateStatus} onDeny={updateStatus} />
+                <EventGroupCard key={g.event?.id} group={g} />
               ))}
             </div>
           )}
@@ -798,60 +798,55 @@ function ContactList({
   )
 }
 
-function EventGroupCard({
-  group: { event, requests: eventRequests },
-  onApprove,
-  onDeny,
-}: {
-  group: { event: AccessRequest['event']; requests: AccessRequest[] }
-  onApprove: (id: string, status: string) => void
-  onDeny: (id: string, status: string) => void
-}) {
+// A lightweight summary that links out to the full per-event dashboard
+// (/admin/events/[id]) instead of re-rendering the whole guest list inline
+// -- that dashboard already owns approve/deny, CSV export, and the "Copy
+// List for Club" action, so duplicating it here just meant two places to
+// keep in sync. RSVP-not-started stays front and center here since it's
+// the number that directly costs promoter credit when it's ignored.
+function EventGroupCard({ group: { event, requests: eventRequests } }: { group: { event: AccessRequest['event']; requests: AccessRequest[] } }) {
   const approved = eventRequests.filter((r) => r.status === 'approved')
   const pending = eventRequests.filter((r) => r.status === 'pending')
+  const rsvpNotStarted = approved.filter((r) => !r.rsvp_completed_at)
+  const thumbnail = event?.image_url || event?.club?.image_url
 
   return (
-    <div>
-      <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
-        <div>
-          <h3 className="text-lg font-medium">{event?.title}</h3>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
-            {event?.club?.name && <span>{event.club.name}</span>}
-            {event?.event_date && (
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                {format(parseISO(event.event_date), 'EEE, MMM d')}
-              </span>
-            )}
+    <Link href={`/admin/events/${event?.id}`} className="block group">
+      <Card className="bg-card border-border/50 hover:border-gold/40 transition-colors">
+        <CardContent className="p-4 flex items-center gap-4">
+          {thumbnail && (
+            <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted">
+              <Image src={thumbnail} alt={event?.title || 'Event'} fill className="object-cover" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium truncate group-hover:text-gold transition-colors">{event?.title}</h3>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+              {event?.club?.name && <span>{event.club.name}</span>}
+              {event?.event_date && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {format(parseISO(event.event_date), 'EEE, MMM d')}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <Badge variant="outline">{eventRequests.length} signed up</Badge>
+              <Badge className="border-0 bg-green-500/20 text-green-500">{approved.length} approved</Badge>
+              {pending.length > 0 && (
+                <Badge className="border-0 bg-amber-500/20 text-amber-500">{pending.length} pending</Badge>
+              )}
+              {rsvpNotStarted.length > 0 && (
+                <Badge className="border-0 bg-amber-500/20 text-amber-500">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  {rsvpNotStarted.length} RSVP not started
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="outline">{eventRequests.length} signed up</Badge>
-          <Badge className="border-0 bg-green-500/20 text-green-500">{approved.length} approved</Badge>
-          {pending.length > 0 && (
-            <Badge className="border-0 bg-amber-500/20 text-amber-500">{pending.length} pending</Badge>
-          )}
-        </div>
-      </div>
-
-      <Card className="bg-card border-border/50 overflow-hidden py-0">
-        <div className="divide-y divide-border/50">
-          {eventRequests.map(
-            (r) =>
-              r.member && (
-                <GuestRow
-                  key={r.id}
-                  member={r.member}
-                  displayRequest={r}
-                  pendingRequestId={r.status === 'pending' ? r.id : undefined}
-                  onApprove={(id) => onApprove(id, 'approved')}
-                  onDeny={(id) => onDeny(id, 'denied')}
-                />
-              ),
-          )}
-        </div>
+        </CardContent>
       </Card>
-    </div>
+    </Link>
   )
 }
 

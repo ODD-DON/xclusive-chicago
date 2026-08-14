@@ -53,6 +53,9 @@ function formatPhone(phone: string): string {
 export function EventDashboardContent({ event, accessRequests: initial }: Props) {
   const router = useRouter()
   const [requests, setRequests] = useState(initial)
+  const [filter, setFilter] = useState<
+    'all' | 'approved' | 'pending' | 'waitlisted' | 'rsvp_not_started' | 'rsvp_opened'
+  >('all')
 
   const approved = requests.filter((r) => r.status === 'approved')
   const pending = requests.filter((r) => r.status === 'pending')
@@ -60,6 +63,20 @@ export function EventDashboardContent({ event, accessRequests: initial }: Props)
   const denied = requests.filter((r) => r.status === 'denied')
   const approvedHeadcount = approved.reduce((sum, r) => sum + (r.guest_count || 1), 0)
   const bottleInterest = requests.filter((r) => r.bottle_service_interest)
+  // Not "confirmed attendance" -- just whether they clicked the venue's RSVP
+  // link. But it's the number that directly costs promoter credit when a
+  // guest never finishes it, so it needs to be as visible as status.
+  const rsvpNotStarted = approved.filter((r) => !r.rsvp_completed_at)
+  const rsvpOpened = approved.filter((r) => !!r.rsvp_completed_at)
+
+  const visibleRequests =
+    filter === 'all'
+      ? requests
+      : filter === 'rsvp_not_started'
+        ? rsvpNotStarted
+        : filter === 'rsvp_opened'
+          ? rsvpOpened
+          : requests.filter((r) => r.status === filter)
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -162,22 +179,61 @@ export function EventDashboardContent({ event, accessRequests: initial }: Props)
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <StatTile label="Total Requests" value={requests.length} />
-        <StatTile label="Approved" value={approved.length} tone="text-green-500" sub={`${approvedHeadcount} headcount`} />
-        <StatTile label="Pending" value={pending.length} tone="text-amber-500" />
-        <StatTile label="Waitlisted" value={waitlisted.length} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <StatTile
+          label="Total Requests"
+          value={requests.length}
+          active={filter === 'all'}
+          onClick={() => setFilter('all')}
+        />
+        <StatTile
+          label="Approved"
+          value={approved.length}
+          tone="text-green-500"
+          sub={`${approvedHeadcount} headcount`}
+          active={filter === 'approved'}
+          onClick={() => setFilter('approved')}
+        />
+        <StatTile
+          label="Pending"
+          value={pending.length}
+          tone="text-amber-500"
+          active={filter === 'pending'}
+          onClick={() => setFilter('pending')}
+        />
+        <StatTile
+          label="Waitlisted"
+          value={waitlisted.length}
+          active={filter === 'waitlisted'}
+          onClick={() => setFilter('waitlisted')}
+        />
+        <StatTile
+          label="RSVP Not Started"
+          value={rsvpNotStarted.length}
+          tone="text-amber-500"
+          active={filter === 'rsvp_not_started'}
+          onClick={() => setFilter('rsvp_not_started')}
+        />
+        <StatTile
+          label="RSVP Link Opened"
+          value={rsvpOpened.length}
+          tone="text-blue-400"
+          active={filter === 'rsvp_opened'}
+          onClick={() => setFilter('rsvp_opened')}
+        />
         <StatTile label="Bottle Interest" value={bottleInterest.length} tone="text-gold" />
       </div>
 
-      {requests.length === 0 ? (
+      {visibleRequests.length === 0 ? (
         <Card className="bg-card border-border/50">
-          <CardContent className="py-12 text-center text-muted-foreground">No requests for this event yet</CardContent>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            {requests.length === 0 ? 'No requests for this event yet' : 'No guests match this filter'}
+          </CardContent>
         </Card>
       ) : (
         <Card className="bg-card border-border/50 overflow-hidden py-0">
           <div className="divide-y divide-border/50">
-            {requests.map((r) => (
+            {visibleRequests.map((r) => (
               <GuestRow key={r.id} request={r} onApprove={updateStatus} onDeny={updateStatus} />
             ))}
           </div>
@@ -298,9 +354,30 @@ function GuestRow({
   )
 }
 
-function StatTile({ label, value, tone, sub }: { label: string; value: number; tone?: string; sub?: string }) {
+function StatTile({
+  label,
+  value,
+  tone,
+  sub,
+  active,
+  onClick,
+}: {
+  label: string
+  value: number
+  tone?: string
+  sub?: string
+  active?: boolean
+  onClick?: () => void
+}) {
   return (
-    <Card className="bg-card border-border/50">
+    <Card
+      className={cn(
+        'bg-card border-border/50 transition-colors',
+        onClick && 'cursor-pointer hover:border-gold/40',
+        active && 'border-gold/50 bg-gold/5',
+      )}
+      onClick={onClick}
+    >
       <CardContent className="p-3">
         <p className="text-xs text-muted-foreground mb-1">{label}</p>
         <p className={`text-2xl font-light ${tone || ''}`}>{value}</p>

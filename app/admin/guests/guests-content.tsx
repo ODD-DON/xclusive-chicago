@@ -34,13 +34,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { chicagoTodayStr } from '@/lib/date'
-import type { AccessRequest, Member, VipInquiry, ExperienceInquiry } from '@/lib/types'
+import type { AccessRequest, Member, VipInquiry, ExperienceInquiry, VipRequest } from '@/lib/types'
 
 interface GuestsContentProps {
   accessRequests: AccessRequest[]
   members: Member[]
   vipInquiries: VipInquiry[]
   experienceInquiries: ExperienceInquiry[]
+  vipRequests: VipRequest[]
 }
 
 type SourceTab = 'guestlist' | 'vip' | 'experiences' | 'all'
@@ -139,7 +140,13 @@ function groupMembers(members: Member[], requests: AccessRequest[]): Member[][] 
   return groups
 }
 
-export function GuestsContent({ accessRequests: initialRequests, members, vipInquiries, experienceInquiries }: GuestsContentProps) {
+export function GuestsContent({
+  accessRequests: initialRequests,
+  members,
+  vipInquiries,
+  experienceInquiries,
+  vipRequests,
+}: GuestsContentProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [requests, setRequests] = useState(initialRequests)
@@ -354,19 +361,39 @@ export function GuestsContent({ accessRequests: initialRequests, members, vipInq
   // the VIP / Experiences / All tabs -- a lighter "database" view than the
   // full lead-management cards on /admin/vip and /admin/experiences, meant
   // for browsing, searching, and exporting everyone in one place.
-  const vipContacts: NormalizedContact[] = vipInquiries.map((i) => ({
-    id: `vip-${i.id}`,
-    source: 'VIP',
-    firstName: i.first_name,
-    lastName: i.last_name,
-    phone: i.phone,
-    email: i.email,
-    instagram: i.instagram,
-    city: i.home_city || i.visitor_city,
-    region: i.home_city ? null : i.visitor_region,
-    extra: [i.party_size ? `${i.party_size} people` : null, i.budget].filter(Boolean).join(' · ') || null,
-    date: i.created_at,
-  }))
+  const vipContacts: NormalizedContact[] = [
+    ...vipInquiries.map((i) => ({
+      id: `vip-${i.id}`,
+      source: 'VIP' as const,
+      firstName: i.first_name,
+      lastName: i.last_name,
+      phone: i.phone,
+      email: i.email,
+      instagram: i.instagram,
+      city: i.home_city || i.visitor_city,
+      region: i.home_city ? null : i.visitor_region,
+      extra: [i.party_size ? `${i.party_size} people` : null, i.budget].filter(Boolean).join(' · ') || null,
+      date: i.created_at,
+    })),
+    // Day-of bottle service requests (the upsell during guestlist RSVP) --
+    // budget/notes only ever live on this table, not the access request.
+    ...vipRequests.map((r) => {
+      const [firstName, ...rest] = r.name.split(' ')
+      return {
+        id: `vipreq-${r.id}`,
+        source: 'VIP' as const,
+        firstName: firstName || r.name,
+        lastName: rest.join(' '),
+        phone: r.phone,
+        email: null,
+        instagram: null,
+        city: null,
+        region: null,
+        extra: ['Day-of', r.group_size ? `${r.group_size} people` : null, r.budget].filter(Boolean).join(' · '),
+        date: r.created_at,
+      }
+    }),
+  ]
 
   const experienceContacts: NormalizedContact[] = experienceInquiries.map((i) => ({
     id: `exp-${i.id}`,

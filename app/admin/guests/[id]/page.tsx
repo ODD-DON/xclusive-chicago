@@ -32,7 +32,7 @@ export default async function GuestProfilePage({ params }: Props) {
         .order('requested_at', { ascending: false })
     : null
 
-  const [accessRequests, vipInquiries, experienceInquiries] = await Promise.all([
+  const [accessRequests, vipInquiries, experienceInquiries, vipRequests] = await Promise.all([
     accessRequestsQuery,
     supabase
       .from('xc_vip_inquiries')
@@ -46,10 +46,19 @@ export default async function GuestProfilePage({ params }: Props) {
       .eq('phone', phone)
       .eq('app_id', APP_ID)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('xc_vip_requests')
+      .select('*')
+      .eq('phone', phone)
+      .eq('app_id', APP_ID)
+      .order('created_at', { ascending: false }),
   ])
 
   const hasAnyData =
-    !!member || (vipInquiries.data?.length || 0) > 0 || (experienceInquiries.data?.length || 0) > 0
+    !!member ||
+    (vipInquiries.data?.length || 0) > 0 ||
+    (experienceInquiries.data?.length || 0) > 0 ||
+    (vipRequests.data?.length || 0) > 0
 
   if (!hasAnyData) {
     notFound()
@@ -62,6 +71,7 @@ export default async function GuestProfilePage({ params }: Props) {
       accessRequests={accessRequests?.data || []}
       vipInquiries={vipInquiries.data || []}
       experienceInquiries={experienceInquiries.data || []}
+      vipRequests={vipRequests.data || []}
     />
   )
 }

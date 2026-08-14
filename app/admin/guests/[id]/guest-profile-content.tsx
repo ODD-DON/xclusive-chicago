@@ -39,11 +39,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import type { AccessRequest, Member, VipInquiry, ExperienceInquiry } from '@/lib/types'
+import type { AccessRequest, Member, VipInquiry, ExperienceInquiry, VipRequest } from '@/lib/types'
 
 interface Props {
   phone: string
   member: Member | null
+  vipRequests: VipRequest[]
   accessRequests: AccessRequest[]
   vipInquiries: VipInquiry[]
   experienceInquiries: ExperienceInquiry[]
@@ -101,6 +102,7 @@ export function GuestProfileContent({
   accessRequests: initialRequests,
   vipInquiries,
   experienceInquiries,
+  vipRequests,
 }: Props) {
   const router = useRouter()
   const [member, setMember] = useState(initialMember)
@@ -202,11 +204,12 @@ export function GuestProfileContent({
 
   const approvedCount = requests.filter((r) => r.status === 'approved').length
   const bottleInterestCount =
-    requests.filter((r) => r.bottle_service_interest).length + vipInquiries.length
+    requests.filter((r) => r.bottle_service_interest).length + vipRequests.length + vipInquiries.length
   const allDates = [
     ...requests.map((r) => r.requested_at),
     ...vipInquiries.map((i) => i.created_at),
     ...experienceInquiries.map((i) => i.created_at),
+    ...vipRequests.map((r) => r.created_at),
     ...(member ? [member.created_at] : []),
   ]
   const firstSeen = allDates.length ? allDates.reduce((earliest, d) => (d < earliest ? d : earliest)) : null
@@ -508,6 +511,51 @@ export function GuestProfileContent({
                       <div className="flex items-start gap-2 text-sm">
                         <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                         <p className="text-muted-foreground">{inq.notes}</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+          <Wine className="w-3.5 h-3.5" />
+          Day-Of Bottle Requests ({vipRequests.length})
+        </p>
+        {vipRequests.length === 0 ? (
+          <Card className="bg-card border-border/50">
+            <CardContent className="py-8 text-center text-muted-foreground text-sm">No day-of bottle requests yet</CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {vipRequests.map((req) => (
+              <Card key={req.id} className="bg-card border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {req.group_size} people
+                    </span>
+                    {req.budget && (
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        {req.budget}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {format(new Date(req.created_at), 'MMM d, h:mm a')}
+                    </span>
+                  </div>
+                  {req.notes && (
+                    <div className="mt-3 p-3 bg-muted rounded-lg">
+                      <div className="flex items-start gap-2 text-sm">
+                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <p className="text-muted-foreground">{req.notes}</p>
                       </div>
                     </div>
                   )}

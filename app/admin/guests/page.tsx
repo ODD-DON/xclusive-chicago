@@ -36,11 +36,21 @@ async function getData() {
     .eq('app_id', APP_ID)
     .order('created_at', { ascending: false })
 
+  // Day-of bottle service requests (the upsell during guestlist RSVP) --
+  // budget/notes only ever live here, not on the access request itself, so
+  // this can't just be inferred from bottle_service_interest elsewhere.
+  const { data: vipRequests } = await supabase
+    .from('xc_vip_requests')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .order('created_at', { ascending: false })
+
   return {
     accessRequests: accessRequests || [],
     members: members || [],
     vipInquiries: vipInquiries || [],
     experienceInquiries: experienceInquiries || [],
+    vipRequests: vipRequests || [],
   }
 }
 

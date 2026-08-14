@@ -134,7 +134,7 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                   key={event.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-gold/40 transition-all duration-300 [backface-visibility:hidden]"
+                  className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-gold/40 transition-all duration-300"
                 >
                   <div className="relative w-full aspect-[16/10] overflow-hidden">
                     {image ? (
@@ -441,7 +441,11 @@ function RequestAccessDialog({
           ))}
         </div>
 
-        <div className="min-h-[260px] overflow-hidden relative">
+        {/* overflow-clip (not hidden): a hidden box is still programmatically
+            scrollable, so autofocusing an input mid slide-in animation makes the
+            browser scroll this wrapper sideways and it sticks, clipping the left
+            edge of every step. clip forbids scrolling entirely. */}
+        <div className="min-h-[260px] overflow-clip relative">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={step}

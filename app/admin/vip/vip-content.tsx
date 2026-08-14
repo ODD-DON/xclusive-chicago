@@ -34,6 +34,23 @@ export function VipContent({ requests, inquiries }: VipContentProps) {
   const searchParams = useSearchParams()
   const highlightId = searchParams.get('inquiry')
 
+  // Landing on this page is "opening" these inquiries -- clear the nav flash
+  // for whatever's currently unviewed. Deliberately fires once per mount,
+  // not per-card, since every inquiry here is already fully visible (no
+  // click-to-expand), so seeing the list IS opening it.
+  useEffect(() => {
+    const unviewedIds = inquiries.filter((i) => !i.viewed_at).map((i) => i.id)
+    if (unviewedIds.length === 0) return
+    fetch('/api/admin/mark-viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'vip', ids: unviewedIds }),
+    })
+      .then(() => window.dispatchEvent(new Event('xc:unread-counts-changed')))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
@@ -169,6 +186,9 @@ function InquiryCard({ inquiry, highlighted }: { inquiry: VipInquiry; highlighte
                 <Wine className="w-3 h-3 mr-1" />
                 VIP
               </Badge>
+              {!inquiry.viewed_at && (
+                <Badge className="bg-red-500/20 text-red-400 border-0 animate-pulse">New</Badge>
+              )}
               {inquiry.out_of_town && (
                 <Badge variant="outline" className="border-gold/30 text-gold">
                   <Plane className="w-3 h-3 mr-1" />

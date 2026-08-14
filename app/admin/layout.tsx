@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -32,6 +32,14 @@ const navItems = [
   { href: '/admin/bachelorette', label: 'Bachelorette', icon: PartyPopper },
 ]
 
+// Which unread-count key (from /api/admin/unread-counts) flashes a "new"
+// badge on which nav item. The badge clears once the admin actually visits
+// that page (see the mark-viewed calls in vip-content.tsx / experiences-content.tsx).
+const UNREAD_KEYS: Record<string, 'vip' | 'experiences'> = {
+  '/admin/vip': 'vip',
+  '/admin/experiences': 'experiences',
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -40,6 +48,27 @@ export default function AdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadCounts, setUnreadCounts] = useState<{ vip: number; experiences: number }>({ vip: 0, experiences: 0 })
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchCounts = () => {
+      fetch('/api/admin/unread-counts')
+        .then((r) => r.json())
+        .then((data) => {
+          if (!cancelled) setUnreadCounts(data)
+        })
+        .catch(() => {})
+    }
+    fetchCounts()
+    const interval = setInterval(fetchCounts, 20000)
+    window.addEventListener('xc:unread-counts-changed', fetchCounts)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      window.removeEventListener('xc:unread-counts-changed', fetchCounts)
+    }
+  }, [])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -105,25 +134,35 @@ export default function AdminLayout({
                 </button>
               </div>
               <nav className="p-4 space-y-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
-                      pathname === item.href
-                        ? 'bg-gold/10 text-gold'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                    {pathname === item.href && (
-                      <ChevronRight className="w-4 h-4 ml-auto" />
-                    )}
-                  </Link>
-                ))}
+                {navItems.map((item) => {
+                  const unreadKey = UNREAD_KEYS[item.href]
+                  const unread = unreadKey ? unreadCounts[unreadKey] : 0
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                        pathname === item.href
+                          ? 'bg-gold/10 text-gold'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                      <span className="ml-auto flex items-center gap-2">
+                        {unread > 0 && (
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-xs font-medium text-red-400">{unread}</span>
+                          </span>
+                        )}
+                        {pathname === item.href && <ChevronRight className="w-4 h-4" />}
+                      </span>
+                    </Link>
+                  )
+                })}
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all w-full text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -154,21 +193,31 @@ export default function AdminLayout({
             </div>
           </div>
           <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
-                  pathname === item.href
-                    ? 'bg-gold/10 text-gold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const unreadKey = UNREAD_KEYS[item.href]
+              const unread = unreadKey ? unreadCounts[unreadKey] : 0
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                    pathname === item.href
+                      ? 'bg-gold/10 text-gold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                  {unread > 0 && (
+                    <span className="ml-auto flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-xs font-medium text-red-400">{unread}</span>
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
           </nav>
           <div className="p-4 border-t border-border/30 space-y-2">
             <Link

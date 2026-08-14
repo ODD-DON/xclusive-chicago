@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { Bus, Ship, Phone, MessageCircle, Mail, Instagram, Users, Calendar, Download, FileText, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,20 @@ function formatDetailValue(value: unknown): string {
 export function ExperiencesContent({ inquiries }: ExperiencesContentProps) {
   const partyBus = inquiries.filter((i) => i.experience_type === 'party_bus')
   const boatDay = inquiries.filter((i) => i.experience_type === 'boat_day')
+
+  // Landing on this page is "opening" these inquiries -- clear the nav flash.
+  useEffect(() => {
+    const unviewedIds = inquiries.filter((i) => !i.viewed_at).map((i) => i.id)
+    if (unviewedIds.length === 0) return
+    fetch('/api/admin/mark-viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'experiences', ids: unviewedIds }),
+    })
+      .then(() => window.dispatchEvent(new Event('xc:unread-counts-changed')))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -109,6 +124,9 @@ function InquiryList({ inquiries, emptyLabel }: { inquiries: ExperienceInquiry[]
                       <Icon className="w-3 h-3 mr-1" />
                       {EXPERIENCE_LABELS[inquiry.experience_type] || inquiry.experience_type}
                     </Badge>
+                    {!inquiry.viewed_at && (
+                      <Badge className="bg-red-500/20 text-red-400 border-0 animate-pulse">New</Badge>
+                    )}
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-3">

@@ -166,6 +166,7 @@ export interface ExperienceInquiry {
   notes: string | null
   visitor_city: string | null
   visitor_region: string | null
+  viewed_at: string | null
   created_at: string
   updated_at: string
 }
@@ -240,5 +241,6 @@ export interface VipInquiry {
   status: string
   visitor_city: string | null
   visitor_region: string | null
+  viewed_at: string | null
   created_at: string
 }

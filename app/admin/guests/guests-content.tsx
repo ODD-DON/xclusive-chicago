@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { chicagoTodayStr } from '@/lib/date'
 import type { AccessRequest, Member } from '@/lib/types'
 
 interface GuestsContentProps {
@@ -117,7 +118,7 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
   const [eventFilter, setEventFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'all' | 'needs_action'>('all')
-  const [displayMode, setDisplayMode] = useState<'guests' | 'events'>('guests')
+  const [displayMode, setDisplayMode] = useState<'guests' | 'events' | 'date'>('guests')
 
   const events = useMemo(() => {
     const map = new Map<string, string>()
@@ -201,6 +202,16 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
       ),
     }))
     .filter((g) => g.requests.length > 0)
+
+  // Upcoming first (soonest first), past events below (most recent first) --
+  // makes it obvious at a glance which nights still need attention.
+  const todayStr = chicagoTodayStr()
+  const upcomingEventGroups = visibleEventGroups
+    .filter((g) => (g.event?.event_date || '') >= todayStr)
+    .sort((a, b) => new Date(a.event?.event_date || 0).getTime() - new Date(b.event?.event_date || 0).getTime())
+  const pastEventGroups = visibleEventGroups
+    .filter((g) => (g.event?.event_date || '') < todayStr)
+    .sort((a, b) => new Date(b.event?.event_date || 0).getTime() - new Date(a.event?.event_date || 0).getTime())
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -298,6 +309,16 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
           >
             By Event
           </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode('date')}
+            className={cn(
+              'px-3 py-1.5 text-sm rounded-md transition-colors',
+              displayMode === 'date' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            By Date
+          </button>
         </div>
       </div>
 
@@ -375,64 +396,107 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
             ))}
           </div>
         )
-      ) : visibleEventGroups.length === 0 ? (
+      ) : displayMode === 'events' ? (
+        visibleEventGroups.length === 0 ? (
+          <Card className="bg-card border-border/50">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              {view === 'needs_action' ? 'Nothing needs your attention right now' : 'No signups match these filters'}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {visibleEventGroups.map((g) => (
+              <EventGroupCard key={g.event?.id} group={g} onApprove={updateStatus} onDeny={updateStatus} />
+            ))}
+          </div>
+        )
+      ) : upcomingEventGroups.length === 0 && pastEventGroups.length === 0 ? (
         <Card className="bg-card border-border/50">
           <CardContent className="py-12 text-center text-muted-foreground">
             {view === 'needs_action' ? 'Nothing needs your attention right now' : 'No signups match these filters'}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {visibleEventGroups.map(({ event, requests: eventRequests }) => {
-            const approved = eventRequests.filter((r) => r.status === 'approved')
-            const pending = eventRequests.filter((r) => r.status === 'pending')
-
-            return (
-              <div key={event?.id}>
-                <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
-                  <div>
-                    <h2 className="text-lg font-medium">{event?.title}</h2>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
-                      {event?.club?.name && <span>{event.club.name}</span>}
-                      {event?.event_date && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {format(parseISO(event.event_date), 'EEE, MMM d')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge variant="outline">{eventRequests.length} signed up</Badge>
-                    <Badge className="border-0 bg-green-500/20 text-green-500">{approved.length} approved</Badge>
-                    {pending.length > 0 && (
-                      <Badge className="border-0 bg-amber-500/20 text-amber-500">{pending.length} pending</Badge>
-                    )}
-                  </div>
-                </div>
-
-                <Card className="bg-card border-border/50 overflow-hidden py-0">
-                  <div className="divide-y divide-border/50">
-                    {eventRequests.map(
-                      (r) =>
-                        r.member && (
-                          <GuestRow
-                            key={r.id}
-                            member={r.member}
-                            displayRequest={r}
-                            pendingRequestId={r.status === 'pending' ? r.id : undefined}
-                            onApprove={(id) => updateStatus(id, 'approved')}
-                            onDeny={(id) => updateStatus(id, 'denied')}
-                          />
-                        ),
-                    )}
-                  </div>
-                </Card>
-              </div>
-            )
-          })}
+        <div className="space-y-8">
+          {upcomingEventGroups.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-gold">
+                Upcoming Events ({upcomingEventGroups.length})
+              </h2>
+              {upcomingEventGroups.map((g) => (
+                <EventGroupCard key={g.event?.id} group={g} onApprove={updateStatus} onDeny={updateStatus} />
+              ))}
+            </div>
+          )}
+          {pastEventGroups.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+                Past Events ({pastEventGroups.length})
+              </h2>
+              {pastEventGroups.map((g) => (
+                <EventGroupCard key={g.event?.id} group={g} onApprove={updateStatus} onDeny={updateStatus} />
+              ))}
+            </div>
+          )}
         </div>
       )}
+    </div>
+  )
+}
+
+function EventGroupCard({
+  group: { event, requests: eventRequests },
+  onApprove,
+  onDeny,
+}: {
+  group: { event: AccessRequest['event']; requests: AccessRequest[] }
+  onApprove: (id: string, status: string) => void
+  onDeny: (id: string, status: string) => void
+}) {
+  const approved = eventRequests.filter((r) => r.status === 'approved')
+  const pending = eventRequests.filter((r) => r.status === 'pending')
+
+  return (
+    <div>
+      <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
+        <div>
+          <h3 className="text-lg font-medium">{event?.title}</h3>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+            {event?.club?.name && <span>{event.club.name}</span>}
+            {event?.event_date && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" />
+                {format(parseISO(event.event_date), 'EEE, MMM d')}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline">{eventRequests.length} signed up</Badge>
+          <Badge className="border-0 bg-green-500/20 text-green-500">{approved.length} approved</Badge>
+          {pending.length > 0 && (
+            <Badge className="border-0 bg-amber-500/20 text-amber-500">{pending.length} pending</Badge>
+          )}
+        </div>
+      </div>
+
+      <Card className="bg-card border-border/50 overflow-hidden py-0">
+        <div className="divide-y divide-border/50">
+          {eventRequests.map(
+            (r) =>
+              r.member && (
+                <GuestRow
+                  key={r.id}
+                  member={r.member}
+                  displayRequest={r}
+                  pendingRequestId={r.status === 'pending' ? r.id : undefined}
+                  onApprove={(id) => onApprove(id, 'approved')}
+                  onDeny={(id) => onDeny(id, 'denied')}
+                />
+              ),
+          )}
+        </div>
+      </Card>
     </div>
   )
 }
@@ -549,18 +613,20 @@ function GuestRow({
       </div>
 
       {/* Mobile-only: a bigger thumbnail filling the empty space on the
-          right of the card. Desktop already fills that space with the
-          contact/status/action columns, so it's hidden there. */}
+          right of the card. Fixed square (not stretched by the row's
+          items-stretch) so the whole flyer is visible, object-contain so
+          nothing gets cropped off. Desktop already fills that space with
+          the contact/status/action columns, so it's hidden there. */}
       {displayRequest?.event &&
         (eventThumbnail ? (
           <div
-            className="relative w-20 shrink-0 rounded-lg overflow-hidden bg-muted sm:hidden"
+            className="relative w-20 h-20 self-center shrink-0 rounded-lg overflow-hidden bg-muted sm:hidden"
             title={displayRequest.event.title || undefined}
           >
-            <Image src={eventThumbnail} alt={displayRequest.event.title || 'Event'} fill className="object-cover" />
+            <Image src={eventThumbnail} alt={displayRequest.event.title || 'Event'} fill className="object-contain" />
           </div>
         ) : (
-          <div className="w-20 shrink-0 rounded-lg bg-muted flex items-center justify-center sm:hidden">
+          <div className="w-20 h-20 self-center shrink-0 rounded-lg bg-muted flex items-center justify-center sm:hidden">
             <Calendar className="w-5 h-5 text-muted-foreground" />
           </div>
         ))}

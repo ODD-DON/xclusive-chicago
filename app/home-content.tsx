@@ -4,10 +4,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowRight, Bus, Ship, Wine, Calendar, MapPin, Users, Plane } from 'lucide-react'
+import { ArrowRight, Bus, Ship, Wine, Calendar, MapPin, Users, Plane, Compass } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Event, Club, CLUB_SIZE_LABELS } from '@/lib/types'
-import { computeAccessStatus, ACCESS_STATUS_LABELS } from '@/lib/access-status'
+import { computeAccessStatus, ACCESS_STATUS_LABELS, effectiveCutoffTime } from '@/lib/access-status'
 
 interface HomeContentProps {
   events: (Event & { club: Club | null })[]
@@ -161,7 +161,11 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                   const image = event.use_venue_branding
                     ? event.club?.image_url || event.image_url
                     : event.image_url || event.club?.image_url
-                  const status = computeAccessStatus(event, approvedCounts[event.id] || 0)
+                  const cutoffTime = effectiveCutoffTime(event, event.club)
+                  const status = computeAccessStatus(
+                    { ...event, cutoff_time: cutoffTime },
+                    approvedCounts[event.id] || 0,
+                  )
 
                   return (
                     <motion.div
@@ -192,13 +196,22 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                               <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                                 <MapPin className="w-3 h-3 shrink-0" />
                                 {venueName}
-                                {neighborhood && ` · ${neighborhood}`}
                               </p>
                             )}
-                            {sizeLabel && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                <Users className="w-3 h-3 shrink-0" />
-                                {sizeLabel.label} ({sizeLabel.capacity})
+                            {(neighborhood || sizeLabel) && (
+                              <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                                {neighborhood && (
+                                  <span className="flex items-center gap-1 truncate">
+                                    <Compass className="w-3 h-3 shrink-0" />
+                                    {neighborhood}
+                                  </span>
+                                )}
+                                {sizeLabel && (
+                                  <span className="flex items-center gap-1">
+                                    <Users className="w-3 h-3 shrink-0" />
+                                    Venue Size: {sizeLabel.label} ({sizeLabel.capacity} capacity)
+                                  </span>
+                                )}
                               </p>
                             )}
                             <span className="text-xs text-muted-foreground mt-1">{ACCESS_STATUS_LABELS[status]}</span>

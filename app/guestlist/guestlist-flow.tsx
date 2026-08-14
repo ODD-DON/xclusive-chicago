@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
-import { ArrowLeft, ArrowRight, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, ChevronRight, Users, Plane } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Calendar, MapPin, Clock, Sparkles, Wine, Ship, Bus, Check, ChevronRight, Users, Plane, Compass } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +26,7 @@ import {
   ACCESS_STATUS_LABELS,
   ACCESS_STATUS_STYLES,
   isStatusActionable,
+  effectiveCutoffTime,
 } from '@/lib/access-status'
 
 interface EventFeedProps {
@@ -122,8 +123,9 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
               const image = event.use_venue_branding
                 ? event.club?.image_url || event.image_url
                 : event.image_url || event.club?.image_url
+              const cutoffTime = effectiveCutoffTime(event, event.club)
               const approvedCount = approvedCounts[event.id] || 0
-              const status = computeAccessStatus(event, approvedCount)
+              const status = computeAccessStatus({ ...event, cutoff_time: cutoffTime }, approvedCount)
               const remaining = remainingPasses(event, approvedCount)
               const actionable = isStatusActionable(status)
 
@@ -185,7 +187,6 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                               <span className="truncate">
                                 {event.use_venue_branding ? venueAddress || venueName : venueName}
                                 {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
-                                {neighborhood ? ` · ${neighborhood}` : ''}
                               </span>
                               <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                             </Link>
@@ -193,25 +194,32 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                             <span className="truncate">
                               {event.use_venue_branding ? venueAddress || venueName : venueName}
                               {!event.use_venue_branding && venueAddress ? ` · ${venueAddress}` : ''}
-                              {neighborhood ? ` · ${neighborhood}` : ''}
                             </span>
                           )}
                         </div>
                       )}
-                      {sizeLabel && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-0.5">
-                          <Users className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            {sizeLabel.label} venue ({sizeLabel.capacity} capacity)
-                          </span>
+                      {(neighborhood || sizeLabel) && (
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-muted-foreground text-sm mt-0.5">
+                          {neighborhood && (
+                            <span className="flex items-center gap-1.5">
+                              <Compass className="w-3.5 h-3.5 shrink-0" />
+                              {neighborhood}
+                            </span>
+                          )}
+                          {sizeLabel && (
+                            <span className="flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 shrink-0" />
+                              Venue Size: {sizeLabel.label} ({sizeLabel.capacity} capacity)
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
 
-                    {event.cutoff_time && (
+                    {cutoffTime && (
                       <div className="flex items-center gap-1.5 text-sm text-gold">
                         <Clock className="w-3.5 h-3.5 shrink-0" />
-                        <span>Complimentary access before {formatTime(event.cutoff_time)}</span>
+                        <span>Complimentary access before {formatTime(cutoffTime)}</span>
                       </div>
                     )}
 

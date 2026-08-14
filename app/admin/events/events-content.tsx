@@ -47,7 +47,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import type { Event, Club } from '@/lib/types'
-import { computeAccessStatus, remainingPasses, ACCESS_STATUS_LABELS } from '@/lib/access-status'
+import { computeAccessStatus, remainingPasses, ACCESS_STATUS_LABELS, effectiveCutoffTime } from '@/lib/access-status'
 
 interface EventsContentProps {
   events: (Event & { club: Club | null })[]
@@ -416,7 +416,8 @@ export function EventsContent({
                   {dateEvents.map((event) => {
                     const regCount = requestCounts[event.id] || 0
                     const approvedCount = approvedCounts[event.id] || 0
-                    const status = computeAccessStatus(event, approvedCount)
+                    const cutoffTime = effectiveCutoffTime(event, event.club)
+                    const status = computeAccessStatus({ ...event, cutoff_time: cutoffTime }, approvedCount)
                     const remaining = remainingPasses(event, approvedCount)
                     const thumbnail = event.image_url || event.club?.image_url
                     const venueName = event.club?.name || event.scraped_venue_name
@@ -460,11 +461,11 @@ export function EventsContent({
                                       Venue Branding
                                     </Badge>
                                   )}
-                                  {event.cutoff_time && (
+                                  {cutoffTime && (
                                     <Badge variant="outline" className="text-xs border-gold/30 text-gold">
                                       <Clock className="w-3 h-3 mr-1" />
-                                      Free until {formatShortTime(event.cutoff_time)}
-                                      {event.club?.default_cutoff_time === event.cutoff_time && ' (venue default)'}
+                                      Free until {formatShortTime(cutoffTime)}
+                                      {!event.cutoff_time && event.club?.default_cutoff_time && ' (venue default)'}
                                     </Badge>
                                   )}
                                   {!event.club_id && (

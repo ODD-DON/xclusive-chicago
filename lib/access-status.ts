@@ -4,6 +4,18 @@ import { chicagoTodayStr, chicagoTimeStr } from '@/lib/date'
 
 const LIMITED_THRESHOLD = 10
 
+// An event's own cutoff_time always wins when set; otherwise falls back to
+// the venue's standing default_cutoff_time, so venue-wide rules (e.g.
+// "free access until midnight at every Hideaway event") apply without
+// needing to be copied onto each event -- including ones that already
+// existed before the venue default was set.
+export function effectiveCutoffTime(
+  event: Pick<Event, 'cutoff_time'>,
+  club?: { default_cutoff_time: string | null } | null,
+): string | null {
+  return event.cutoff_time || club?.default_cutoff_time || null
+}
+
 // Pure calendar-date arithmetic on an already Chicago-local 'yyyy-MM-dd'
 // string -- anchored at noon so it can't land on a DST boundary.
 function chicagoDateOffset(dateStr: string, days: number): string {

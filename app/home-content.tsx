@@ -227,7 +227,7 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                   <Plane className="w-5 h-5 text-gold" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">Coming from out of town?</p>
+                  <p className="font-medium text-sm">Planning ahead?</p>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     Don&apos;t see your date yet? New access goes up weekly, but you can lock in a VIP table now
                     instead of waiting.

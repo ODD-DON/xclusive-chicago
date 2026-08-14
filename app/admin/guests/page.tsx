@@ -23,9 +23,23 @@ async function getData() {
     .eq('app_id', APP_ID)
     .order('created_at', { ascending: false })
 
+  const { data: vipInquiries } = await supabase
+    .from('xc_vip_inquiries')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .order('created_at', { ascending: false })
+
+  const { data: experienceInquiries } = await supabase
+    .from('xc_experience_inquiries')
+    .select('*')
+    .eq('app_id', APP_ID)
+    .order('created_at', { ascending: false })
+
   return {
     accessRequests: accessRequests || [],
     members: members || [],
+    vipInquiries: vipInquiries || [],
+    experienceInquiries: experienceInquiries || [],
   }
 }
 

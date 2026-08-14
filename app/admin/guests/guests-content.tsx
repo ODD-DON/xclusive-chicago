@@ -21,6 +21,10 @@ import {
   ExternalLink,
   Calendar,
   Globe,
+  Wine,
+  Bus,
+  Ship,
+  Ticket,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,11 +34,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { chicagoTodayStr } from '@/lib/date'
-import type { AccessRequest, Member } from '@/lib/types'
+import type { AccessRequest, Member, VipInquiry, ExperienceInquiry } from '@/lib/types'
 
 interface GuestsContentProps {
   accessRequests: AccessRequest[]
   members: Member[]
+  vipInquiries: VipInquiry[]
+  experienceInquiries: ExperienceInquiry[]
+}
+
+type SourceTab = 'guestlist' | 'vip' | 'experiences' | 'all'
+
+interface NormalizedContact {
+  id: string
+  source: 'Guestlist' | 'VIP' | 'Party Bus' | 'Boat Day'
+  firstName: string
+  lastName: string
+  phone: string
+  email: string | null
+  instagram: string | null
+  city: string | null
+  region: string | null
+  extra: string | null
+  date: string
+}
+
+const EXPERIENCE_SOURCE_LABEL: Record<string, 'Party Bus' | 'Boat Day'> = {
+  party_bus: 'Party Bus',
+  boat_day: 'Boat Day',
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -112,13 +139,14 @@ function groupMembers(members: Member[], requests: AccessRequest[]): Member[][] 
   return groups
 }
 
-export function GuestsContent({ accessRequests: initialRequests, members }: GuestsContentProps) {
+export function GuestsContent({ accessRequests: initialRequests, members, vipInquiries, experienceInquiries }: GuestsContentProps) {
   const router = useRouter()
   const [requests, setRequests] = useState(initialRequests)
   const [eventFilter, setEventFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [view, setView] = useState<'all' | 'needs_action'>('all')
   const [displayMode, setDisplayMode] = useState<'guests' | 'events' | 'date'>('guests')
+  const [sourceTab, setSourceTab] = useState<SourceTab>('guestlist')
 
   const events = useMemo(() => {
     const map = new Map<string, string>()
@@ -260,19 +288,163 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
 
   const visibleGroups = groupMembers(visibleMembers, requests)
 
+  // Every customer contact, normalized across the three lead sources, for
+  // the VIP / Experiences / All tabs -- a lighter "database" view than the
+  // full lead-management cards on /admin/vip and /admin/experiences, meant
+  // for browsing, searching, and exporting everyone in one place.
+  const vipContacts: NormalizedContact[] = vipInquiries.map((i) => ({
+    id: `vip-${i.id}`,
+    source: 'VIP',
+    firstName: i.first_name,
+    lastName: i.last_name,
+    phone: i.phone,
+    email: i.email,
+    instagram: i.instagram,
+    city: i.home_city || i.visitor_city,
+    region: i.home_city ? null : i.visitor_region,
+    extra: [i.party_size ? `${i.party_size} people` : null, i.budget].filter(Boolean).join(' · ') || null,
+    date: i.created_at,
+  }))
+
+  const experienceContacts: NormalizedContact[] = experienceInquiries.map((i) => ({
+    id: `exp-${i.id}`,
+    source: EXPERIENCE_SOURCE_LABEL[i.experience_type] || 'Party Bus',
+    firstName: i.first_name,
+    lastName: i.last_name,
+    phone: i.phone,
+    email: i.email,
+    instagram: i.instagram,
+    city: i.visitor_city,
+    region: i.visitor_region,
+    extra: i.group_size != null ? `${i.group_size} people` : null,
+    date: i.created_at,
+  }))
+
+  const guestlistContacts: NormalizedContact[] = members.map((m) => {
+    const memberRequests = requestsByMemberId.get(m.id) || []
+    const mostRecent = memberRequests[0]
+    return {
+      id: `gl-${m.id}`,
+      source: 'Guestlist',
+      firstName: m.first_name,
+      lastName: m.last_name,
+      phone: m.phone,
+      email: m.email,
+      instagram: m.instagram,
+      city: mostRecent?.visitor_city || null,
+      region: mostRecent?.visitor_region || null,
+      extra: mostRecent?.event?.title || null,
+      date: mostRecent?.requested_at || m.created_at,
+    }
+  })
+
+  const allContacts = [...guestlistContacts, ...vipContacts, ...experienceContacts].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  )
+
+  const matchesContactSearch = (c: NormalizedContact) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return [c.firstName, c.lastName, c.phone, c.email, c.instagram, c.city]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(q)
+  }
+
+  const visibleVipContacts = vipContacts.filter(matchesContactSearch)
+  const visibleExperienceContacts = experienceContacts.filter(matchesContactSearch)
+  const visibleAllContacts = allContacts.filter(matchesContactSearch)
+
+  const exportContacts = (contacts: NormalizedContact[], filenameLabel: string, includeSource: boolean) => {
+    const header = [
+      ...(includeSource ? ['Source'] : []),
+      'First Name',
+      'Last Name',
+      'Phone',
+      'Email',
+      'Instagram',
+      'City',
+      'Region',
+      'Details',
+      'Date',
+    ]
+    const escape = (value: string) => `"${value.replace(/"/g, '""')}"`
+    const rows = contacts.map((c) => [
+      ...(includeSource ? [c.source] : []),
+      c.firstName,
+      c.lastName,
+      formatPhone(c.phone),
+      c.email || '',
+      c.instagram ? `@${c.instagram.replace(/^@/, '')}` : '',
+      c.city || '',
+      c.region || '',
+      c.extra || '',
+      format(new Date(c.date), 'yyyy-MM-dd'),
+    ])
+
+    const csv = [header, ...rows].map((row) => row.map((cell) => escape(String(cell))).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `xclusive-${filenameLabel}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success(`Exported ${rows.length} contact${rows.length === 1 ? '' : 's'}`)
+  }
+
+  const sourceExport = () => {
+    if (sourceTab === 'vip') return exportContacts(visibleVipContacts, 'vip-customers', false)
+    if (sourceTab === 'experiences') return exportContacts(visibleExperienceContacts, 'experience-customers', true)
+    if (sourceTab === 'all') return exportContacts(visibleAllContacts, 'all-customers', true)
+    return exportCsv()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-light mb-2">Guests</h1>
-          <p className="text-muted-foreground">Your full guest database, grouped by who came together</p>
+          <p className="text-muted-foreground">
+            {sourceTab === 'guestlist' && 'Your full guest database, grouped by who came together'}
+            {sourceTab === 'vip' && 'Everyone who has inquired about VIP tables'}
+            {sourceTab === 'experiences' && 'Everyone who has inquired about Party Bus or Boat Day'}
+            {sourceTab === 'all' && 'Every customer across guestlist, VIP, and experiences, in one place'}
+          </p>
         </div>
-        <Button variant="outline" onClick={exportCsv} className="shrink-0">
+        <Button variant="outline" onClick={sourceExport} className="shrink-0">
           <Download className="w-4 h-4 mr-2" />
           Export CSV{search || eventFilter !== 'all' ? ' (filtered)' : ''}
         </Button>
       </div>
 
+      <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit overflow-x-auto">
+        {(
+          [
+            { key: 'guestlist', label: 'Guestlist', icon: Ticket },
+            { key: 'vip', label: 'VIP', icon: Wine },
+            { key: 'experiences', label: 'Experiences', icon: Bus },
+            { key: 'all', label: 'All', icon: UsersRound },
+          ] as { key: SourceTab; label: string; icon: typeof Wine }[]
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setSourceTab(t.key)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap',
+              sourceTab === t.key ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            <t.icon className="w-3.5 h-3.5" />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {sourceTab === 'guestlist' && (
+      <>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatTile label="Members" value={stats.totalMembers} active={view === 'all'} onClick={() => setView('all')} />
         <StatTile
@@ -440,7 +612,100 @@ export function GuestsContent({ accessRequests: initialRequests, members }: Gues
           )}
         </div>
       )}
+      </>
+      )}
+
+      {sourceTab !== 'guestlist' && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, phone, email, or Instagram"
+            className="pl-9 bg-muted border-border/50"
+          />
+        </div>
+      )}
+
+      {sourceTab === 'vip' && <ContactList contacts={visibleVipContacts} emptyLabel="No VIP inquiries yet" />}
+      {sourceTab === 'experiences' && (
+        <ContactList contacts={visibleExperienceContacts} emptyLabel="No experience inquiries yet" />
+      )}
+      {sourceTab === 'all' && (
+        <ContactList contacts={visibleAllContacts} emptyLabel="No customers yet" showSource />
+      )}
     </div>
+  )
+}
+
+function ContactList({
+  contacts,
+  emptyLabel,
+  showSource,
+}: {
+  contacts: NormalizedContact[]
+  emptyLabel: string
+  showSource?: boolean
+}) {
+  if (contacts.length === 0) {
+    return (
+      <Card className="bg-card border-border/50">
+        <CardContent className="py-12 text-center text-muted-foreground">{emptyLabel}</CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="bg-card border-border/50 overflow-hidden py-0">
+      <div className="divide-y divide-border/50">
+        {contacts.map((c) => (
+          <div key={c.id} className="p-4 grid gap-3 sm:grid-cols-[1.3fr_1.4fr_1fr_auto] sm:items-center">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium">
+                  {c.firstName} {c.lastName}
+                </span>
+                {showSource && (
+                  <Badge variant="outline" className="text-xs border-gold/30 text-gold shrink-0">
+                    {c.source === 'VIP' && <Wine className="w-3 h-3 mr-1" />}
+                    {c.source === 'Party Bus' && <Bus className="w-3 h-3 mr-1" />}
+                    {c.source === 'Boat Day' && <Ship className="w-3 h-3 mr-1" />}
+                    {c.source === 'Guestlist' && <Ticket className="w-3 h-3 mr-1" />}
+                    {c.source}
+                  </Badge>
+                )}
+              </div>
+              {c.extra && <p className="text-xs text-muted-foreground mt-0.5 truncate">{c.extra}</p>}
+            </div>
+
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground min-w-0">
+              <ContactPhone phone={c.phone} />
+              {c.email && (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Mail className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{c.email}</span>
+                </div>
+              )}
+              {c.instagram && <InstagramLink handle={c.instagram} />}
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              {c.city && (
+                <span className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 shrink-0" />
+                  {c.city}
+                  {c.region ? `, ${c.region}` : ''}
+                </span>
+              )}
+            </div>
+
+            <div className="text-xs text-muted-foreground text-right shrink-0">
+              {format(new Date(c.date), 'MMM d, h:mm a')}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   )
 }
 

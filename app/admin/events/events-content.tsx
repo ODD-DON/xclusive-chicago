@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,6 +17,8 @@ import {
   AlertTriangle,
   ExternalLink,
   Clock,
+  Upload,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -601,12 +603,19 @@ export function EventsContent({
                   setForm={setForm}
                   clubs={clubs}
                   imagePreview={mode === 'link'}
+                  eventId={editingEventId}
                 />
               )}
             </div>
           ) : (
             <div className="space-y-4">
-              <ReviewFields form={form} setForm={setForm} clubs={clubs} imagePreview={false} />
+              <ReviewFields
+                form={form}
+                setForm={setForm}
+                clubs={clubs}
+                imagePreview={false}
+                eventId={editingEventId}
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -650,22 +659,53 @@ function ReviewFields({
   setForm,
   clubs,
   imagePreview,
+  eventId,
 }: {
   form: ReviewForm
   setForm: (form: ReviewForm) => void
   clubs: Club[]
   imagePreview: boolean
+  eventId?: string | null
 }) {
   const selectedClub = clubs.find((c) => c.id === form.clubId)
   const selectedClubPhotos = selectedClub
     ? ([selectedClub.image_url, ...(selectedClub.gallery_urls || [])].filter(Boolean) as string[])
     : []
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [showUrlField, setShowUrlField] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (eventId) formData.append('eventId', eventId)
+      const response = await fetch('/api/admin/events/upload', { method: 'POST', body: formData })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Upload failed')
+      }
+      const { url } = await response.json()
+      setForm({ ...form, imageUrl: url })
+      toast.success('Flyer uploaded')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="space-y-4">
       {imagePreview && form.imageUrl && (
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
-          <Image src={form.imageUrl} alt={form.title} fill className="object-cover" />
+        <div className="relative w-full aspect-[4/5] max-h-72 rounded-lg overflow-hidden bg-black mx-auto">
+          <Image src={form.imageUrl} alt={form.title} fill className="object-contain" />
         </div>
       )}
 
@@ -770,13 +810,53 @@ function ReviewFields({
       )}
 
       <div className="space-y-2">
-        <Label>Image URL</Label>
-        <Input
-          value={form.imageUrl}
-          onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-          placeholder="Paste the event flyer URL, or pick a venue photo below"
-          className="bg-muted border-border/50"
-        />
+        <Label>Event Flyer</Label>
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+        {form.imageUrl ? (
+          <div className="relative w-full aspect-[4/5] max-h-64 rounded-lg overflow-hidden bg-black mx-auto">
+            <Image src={form.imageUrl} alt="Event flyer" fill className="object-contain" />
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, imageUrl: '' })}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-background/80 hover:bg-background transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-full h-36 rounded-lg border-2 border-dashed border-border/50 hover:border-gold/50 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            {isUploading ? (
+              <Spinner className="w-6 h-6" />
+            ) : (
+              <>
+                <Upload className="w-6 h-6" />
+                <span className="text-sm">Upload flyer</span>
+              </>
+            )}
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setShowUrlField((v) => !v)}
+          className="text-xs text-muted-foreground hover:text-foreground underline"
+        >
+          Or paste an image URL instead
+        </button>
+        {showUrlField && (
+          <Input
+            value={form.imageUrl}
+            onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+            placeholder="https://..."
+            className="bg-muted border-border/50"
+          />
+        )}
+
         {selectedClubPhotos.length > 0 && (
           <div className="space-y-1.5 pt-1">
             <p className="text-xs text-muted-foreground">Or use a venue photo</p>

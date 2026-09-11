@@ -148,7 +148,7 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                   key={event.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-gold/40 transition-all duration-300"
+                  className="bg-card border border-gold/40 rounded-2xl overflow-hidden hover:border-gold/70 transition-all duration-300"
                 >
                   <div className="relative w-full aspect-[4/5] overflow-hidden bg-black">
                     {image ? (

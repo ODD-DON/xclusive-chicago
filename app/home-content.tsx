@@ -7,7 +7,7 @@ import { format, parseISO, isSameDay } from 'date-fns'
 import { ArrowRight, Bus, Ship, Wine, Calendar, MapPin, Users, Plane, Compass } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Event, Club, CLUB_SIZE_LABELS } from '@/lib/types'
-import { computeAccessStatus, ACCESS_STATUS_LABELS, effectiveCutoffTime } from '@/lib/access-status'
+import { computeAccessStatus, ACCESS_STATUS_LABELS, effectiveCutoffTime, effectiveUnlockTime } from '@/lib/access-status'
 
 interface HomeContentProps {
   events: (Event & { club: Club | null })[]
@@ -170,8 +170,9 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                     ? event.club?.image_url || event.image_url
                     : event.image_url || event.club?.image_url
                   const cutoffTime = effectiveCutoffTime(event, event.club)
+                  const unlockTime = effectiveUnlockTime(event, event.club)
                   const status = computeAccessStatus(
-                    { ...event, cutoff_time: cutoffTime },
+                    { ...event, cutoff_time: cutoffTime, unlock_time: unlockTime },
                     approvedCounts[event.id] || 0,
                   )
 

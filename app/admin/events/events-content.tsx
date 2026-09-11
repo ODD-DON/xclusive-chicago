@@ -48,7 +48,13 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import type { Event, Club } from '@/lib/types'
-import { computeAccessStatus, remainingPasses, ACCESS_STATUS_LABELS, effectiveCutoffTime } from '@/lib/access-status'
+import {
+  computeAccessStatus,
+  remainingPasses,
+  ACCESS_STATUS_LABELS,
+  effectiveCutoffTime,
+  effectiveUnlockTime,
+} from '@/lib/access-status'
 
 interface EventsContentProps {
   events: (Event & { club: Club | null })[]
@@ -418,7 +424,11 @@ export function EventsContent({
                     const regCount = requestCounts[event.id] || 0
                     const approvedCount = approvedCounts[event.id] || 0
                     const cutoffTime = effectiveCutoffTime(event, event.club)
-                    const status = computeAccessStatus({ ...event, cutoff_time: cutoffTime }, approvedCount)
+                    const unlockTime = effectiveUnlockTime(event, event.club)
+                    const status = computeAccessStatus(
+                      { ...event, cutoff_time: cutoffTime, unlock_time: unlockTime },
+                      approvedCount,
+                    )
                     const remaining = remainingPasses(event, approvedCount)
                     const thumbnail = event.image_url || event.club?.image_url
                     const venueName = event.club?.name || event.scraped_venue_name

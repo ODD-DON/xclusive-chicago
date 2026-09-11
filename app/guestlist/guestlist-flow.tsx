@@ -28,6 +28,7 @@ import {
   ACCESS_STATUS_STYLES,
   isStatusActionable,
   effectiveCutoffTime,
+  effectiveUnlockTime,
 } from '@/lib/access-status'
 
 interface EventFeedProps {
@@ -46,7 +47,12 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
     const match = events.find((e) => e.id === initialEventId)
     if (match) {
       setAccessEvent(match)
-      setAccessIsWaitlist(computeAccessStatus(match, approvedCounts[match.id] || 0) === 'WAITLIST')
+      const resolved = {
+        ...match,
+        cutoff_time: effectiveCutoffTime(match, match.club),
+        unlock_time: effectiveUnlockTime(match, match.club),
+      }
+      setAccessIsWaitlist(computeAccessStatus(resolved, approvedCounts[match.id] || 0) === 'WAITLIST')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEventId])
@@ -128,8 +134,12 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                 ? event.club?.image_url || event.image_url
                 : event.image_url || event.club?.image_url
               const cutoffTime = effectiveCutoffTime(event, event.club)
+              const unlockTime = effectiveUnlockTime(event, event.club)
               const approvedCount = approvedCounts[event.id] || 0
-              const status = computeAccessStatus({ ...event, cutoff_time: cutoffTime }, approvedCount)
+              const status = computeAccessStatus(
+                { ...event, cutoff_time: cutoffTime, unlock_time: unlockTime },
+                approvedCount,
+              )
               const remaining = remainingPasses(event, approvedCount)
               const actionable = isStatusActionable(status)
 
@@ -140,10 +150,10 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-gold/40 transition-all duration-300"
                 >
-                  <div className="relative w-full aspect-[16/10] overflow-hidden">
+                  <div className="relative w-full aspect-[4/5] overflow-hidden bg-black">
                     {image ? (
                       <>
-                        <Image src={image} alt={event.title || 'Event'} fill className="object-cover" />
+                        <Image src={image} alt={event.title || 'Event'} fill className="object-contain" />
                         <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
                       </>
                     ) : (

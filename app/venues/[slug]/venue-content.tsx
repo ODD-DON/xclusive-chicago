@@ -7,7 +7,13 @@ import { motion, AnimatePresence, type PanInfo } from 'framer-motion'
 import { format, parseISO, isSameDay } from 'date-fns'
 import { ArrowLeft, MapPin, Users, Music, Shirt, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Club, Event, ClubSize } from '@/lib/types'
-import { computeAccessStatus, ACCESS_STATUS_LABELS, ACCESS_STATUS_STYLES, effectiveCutoffTime } from '@/lib/access-status'
+import {
+  computeAccessStatus,
+  ACCESS_STATUS_LABELS,
+  ACCESS_STATUS_STYLES,
+  effectiveCutoffTime,
+  effectiveUnlockTime,
+} from '@/lib/access-status'
 
 const SWIPE_THRESHOLD = 50
 
@@ -186,7 +192,11 @@ export function VenueContent({ club, events, approvedCounts }: Props) {
               <div className="space-y-2">
                 {events.map((event) => {
                   const status = computeAccessStatus(
-                    { ...event, cutoff_time: effectiveCutoffTime(event, club) },
+                    {
+                      ...event,
+                      cutoff_time: effectiveCutoffTime(event, club),
+                      unlock_time: effectiveUnlockTime(event, club),
+                    },
                     approvedCounts[event.id] || 0,
                   )
                   const dateObj = parseISO(event.event_date)

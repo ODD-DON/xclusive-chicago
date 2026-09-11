@@ -16,6 +16,18 @@ export function effectiveCutoffTime(
   return event.cutoff_time || club?.default_cutoff_time || null
 }
 
+// Same fallback as effectiveCutoffTime, but for unlock_time -- needed
+// because computeAccessStatus's midnight-wrap detection compares cutoff_time
+// against unlock_time, and an event that only ever set its cutoff (relying
+// on the venue default for both) would otherwise pass unlock_time as null,
+// silently defeating the wrap check and reporting ACCESS_CLOSED all day.
+export function effectiveUnlockTime(
+  event: Pick<Event, 'unlock_time'>,
+  club?: { default_unlock_time: string | null } | null,
+): string | null {
+  return event.unlock_time || club?.default_unlock_time || null
+}
+
 // Pure calendar-date arithmetic on an already Chicago-local 'yyyy-MM-dd'
 // string -- anchored at noon so it can't land on a DST boundary.
 function chicagoDateOffset(dateStr: string, days: number): string {

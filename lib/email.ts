@@ -21,7 +21,7 @@ const STATUS_COPY: Record<
   { subject: string; eyebrow: string; heading: string; body: string; cta: string; noun: string }
 > = {
   approved: {
-    subject: "⭐ You're approved for Xclusive Chicago",
+    subject: "⭐ You're On The List, Xclusive Chicago",
     eyebrow: 'Access Granted',
     heading: "You're On The List",
     body: "you're approved. Your ticket is ready below, show it to staff at the door.",

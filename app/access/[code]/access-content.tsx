@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
 import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy, MessageCircle } from 'lucide-react'
@@ -30,6 +31,11 @@ export function AccessContent({ accessRequest }: Props) {
   const rsvpUrl = event?.ticket_url || null
   const [copied, setCopied] = useState(false)
   const [ticketLinkCopied, setTicketLinkCopied] = useState(false)
+  // Landed here from a resubmit (guestlist-flow.tsx tags the redirect) --
+  // the guest already has a ticket, so say that plainly instead of letting
+  // them think the resubmit did something, and point them at the invite
+  // link right away since that's the one thing a resubmit usually means.
+  const alreadyOnList = useSearchParams().get('already') === '1'
 
   const copyTicketLink = async () => {
     try {
@@ -120,6 +126,19 @@ export function AccessContent({ accessRequest }: Props) {
             Back to Guestlist
           </Link>
         </div>
+
+        {alreadyOnList && status !== 'denied' && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 rounded-xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-foreground"
+          >
+            <p className="font-medium text-gold">You&apos;re already on the list.</p>
+            <p className="text-muted-foreground mt-0.5">
+              No need to sign up again, here&apos;s your ticket. Bringing friends? Share your invite link below.
+            </p>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -226,7 +245,9 @@ export function AccessContent({ accessRequest }: Props) {
           )}
 
           {status !== 'denied' && (
-            <div className="p-6 pt-4 border-t border-border/30">
+            <div
+              className={`p-6 pt-4 border-t border-border/30 ${alreadyOnList ? 'bg-gold/5' : ''}`}
+            >
               <p className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground mb-2">
                 Optional: invite your group
               </p>

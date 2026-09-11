@@ -431,7 +431,9 @@ function RequestAccessDialog({
       }
 
       if (data.alreadyRequested) {
-        toast.info("You've already requested access to this event")
+        toast.info("You're already on the list! Here's your ticket.")
+        router.push(`/access/${data.accessCode}?already=1`)
+        return
       }
       router.push(`/access/${data.accessCode}`)
     } catch (error) {

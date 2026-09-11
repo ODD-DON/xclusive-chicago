@@ -24,5 +24,13 @@ export default async function AccessPage({ params }: Props) {
     notFound()
   }
 
-  return <AccessContent accessRequest={accessRequest} />
+  const appleWalletEnabled = !!(
+    process.env.APPLE_SIGNER_CERT_BASE64 &&
+    process.env.APPLE_SIGNER_KEY_BASE64 &&
+    process.env.APPLE_WWDR_CERT_BASE64 &&
+    process.env.APPLE_PASS_TYPE_IDENTIFIER &&
+    process.env.APPLE_TEAM_IDENTIFIER
+  )
+
+  return <AccessContent accessRequest={accessRequest} appleWalletEnabled={appleWalletEnabled} />
 }

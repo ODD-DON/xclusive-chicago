@@ -10,22 +10,26 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
 import confetti from 'canvas-confetti'
+import { TicketCard } from './ticket-card'
 
 interface Props {
   accessRequest: AccessRequest
+  appleWalletEnabled: boolean
 }
 
-export function AccessContent({ accessRequest }: Props) {
+export function AccessContent({ accessRequest, appleWalletEnabled }: Props) {
   const { status, member, event, access_code, guest_count } = accessRequest
   const club = event?.club
   // Always the exact link pasted into the admin, byte-for-byte -- DICE's
   // link.dice.fm short links (Branch-powered) don't tolerate appended query
   // params, they break the short link's own redirect/attribution lookup and
   // silently drop the referral tracking baked into it.
+  //
+  // This is now an optional, secondary action -- the venue's own ticketing
+  // has had outages, so the XCLUSIVE ticket (below) is the credential that
+  // actually gets a guest through the door, not a gate in front of it.
   const rsvpUrl = event?.ticket_url || null
   const [copied, setCopied] = useState(false)
-
-  const needsRsvp = status === 'approved' && !!rsvpUrl
 
   // window is only read inside these handlers (never in the component body)
   // so this component stays safe to server-render.
@@ -111,40 +115,28 @@ export function AccessContent({ accessRequest }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card border border-border/50 rounded-2xl overflow-hidden"
         >
-          {needsRsvp && (
-            <div className="p-6 pb-5 border-b border-border/30">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                <span className="text-[11px] font-semibold tracking-wide uppercase text-gold">
-                  Required to get in
-                </span>
-              </div>
-              <h1 className="text-xl font-semibold mb-1">Complete Your Venue RSVP</h1>
-              <p className="text-sm text-muted-foreground mb-4">
-                {member?.first_name}, your name isn&apos;t on the door list yet. Complete the venue&apos;s official
-                RSVP now to secure entry.
-              </p>
-              <Button
-                asChild
-                className="w-full bg-gold hover:bg-gold-light text-background font-medium"
-                onClick={markRsvpStarted}
-              >
-                <a href={rsvpUrl!} target="_blank" rel="noreferrer">
-                  Complete Venue RSVP
-                </a>
-              </Button>
-            </div>
-          )}
-
-          {status === 'approved' && !needsRsvp && (
-            <div className="p-6 pb-4 text-center border-b border-border/30">
+          {status === 'approved' && (
+            <div className="p-6 pb-4 text-center">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
                 <Check className="w-7 h-7 text-gold" />
               </div>
               <h1 className="text-xl font-semibold text-gold-gradient mb-1">Access Granted</h1>
-              <p className="text-sm text-muted-foreground">
-                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list.
+              <p className="text-sm text-muted-foreground mb-5">
+                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list. This is your ticket for the
+                door.
               </p>
+              <TicketCard accessRequest={accessRequest} appleWalletEnabled={appleWalletEnabled} />
+              {rsvpUrl && (
+                <a
+                  href={rsvpUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={markRsvpStarted}
+                  className="inline-block mt-4 text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+                >
+                  Also RSVP with {club?.name || 'the venue'} directly
+                </a>
+              )}
             </div>
           )}
 
@@ -179,8 +171,8 @@ export function AccessContent({ accessRequest }: Props) {
             </div>
           )}
 
-          {event && (
-            <div className="p-6 space-y-3">
+          {event && status !== 'approved' && (
+            <div className="p-6 space-y-3 border-t border-border/30">
               <div>
                 <p className="font-medium text-lg">{event.title}</p>
                 {club?.name && (
@@ -194,41 +186,41 @@ export function AccessContent({ accessRequest }: Props) {
                   <span>{format(parseISO(event.event_date), 'EEEE, MMMM d')}</span>
                 </div>
               </div>
+            </div>
+          )}
 
-              {guest_count > 1 && status !== 'denied' && (
-                <div className="pt-3 border-t border-border/30 mt-1">
-                  <p className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground mb-2">
-                    Optional — invite your group
-                  </p>
-                  <div className="flex items-start gap-2 text-xs text-muted-foreground mb-2">
-                    <Users className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <p>
-                      Access is granted per person. Share this link so the rest of your group ({guest_count - 1} more)
-                      can request their own access — we&apos;ll know you&apos;re together.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full border-border/50 text-foreground hover:bg-muted"
-                      onClick={shareInvite}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Text Your Group
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full border-border/50 text-foreground hover:bg-muted"
-                      onClick={copyGroupLink}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      {copied ? 'Link Copied' : 'Copy Invite Link'}
-                    </Button>
-                  </div>
-                </div>
-              )}
+          {guest_count > 1 && status !== 'denied' && (
+            <div className="p-6 pt-4 border-t border-border/30">
+              <p className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground mb-2">
+                Optional — invite your group
+              </p>
+              <div className="flex items-start gap-2 text-xs text-muted-foreground mb-2">
+                <Users className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <p>
+                  Access is granted per person. Share this link so the rest of your group ({guest_count - 1} more)
+                  can request their own access — we&apos;ll know you&apos;re together.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-border/50 text-foreground hover:bg-muted"
+                  onClick={shareInvite}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Text Your Group
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-border/50 text-foreground hover:bg-muted"
+                  onClick={copyGroupLink}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  {copied ? 'Link Copied' : 'Copy Invite Link'}
+                </Button>
+              </div>
             </div>
           )}
         </motion.div>

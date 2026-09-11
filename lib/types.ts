@@ -135,6 +135,8 @@ export interface AccessRequest {
   referred_by_code: string | null
   visitor_city: string | null
   visitor_region: string | null
+  checked_in_at: string | null
+  checked_in_by: string | null
   member?: Member
   event?: Event & { club: Club | null }
 }

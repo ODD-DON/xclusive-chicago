@@ -14,10 +14,9 @@ import { TicketCard } from './ticket-card'
 
 interface Props {
   accessRequest: AccessRequest
-  appleWalletEnabled: boolean
 }
 
-export function AccessContent({ accessRequest, appleWalletEnabled }: Props) {
+export function AccessContent({ accessRequest }: Props) {
   const { status, member, event, access_code, guest_count } = accessRequest
   const club = event?.club
   // Always the exact link pasted into the admin, byte-for-byte -- DICE's
@@ -122,10 +121,16 @@ export function AccessContent({ accessRequest, appleWalletEnabled }: Props) {
               </div>
               <h1 className="text-xl font-semibold text-gold-gradient mb-1">Access Granted</h1>
               <p className="text-sm text-muted-foreground mb-5">
-                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list. This is your ticket for the
-                door.
+                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list.{' '}
+                {guest_count > 1
+                  ? `Here ${guest_count === 2 ? 'are your 2 tickets' : `are your ${guest_count} tickets`} for the door -- one per person.`
+                  : 'This is your ticket for the door.'}
               </p>
-              <TicketCard accessRequest={accessRequest} appleWalletEnabled={appleWalletEnabled} />
+              <div className="space-y-4">
+                {Array.from({ length: guest_count }, (_, i) => i + 1).map((guestNumber) => (
+                  <TicketCard key={guestNumber} accessRequest={accessRequest} guestNumber={guestNumber} />
+                ))}
+              </div>
               {rsvpUrl && (
                 <a
                   href={rsvpUrl}

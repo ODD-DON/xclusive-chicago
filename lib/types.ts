@@ -135,10 +135,17 @@ export interface AccessRequest {
   referred_by_code: string | null
   visitor_city: string | null
   visitor_region: string | null
-  checked_in_at: string | null
-  checked_in_by: string | null
+  checked_in_guests: CheckedInGuest[]
   member?: Member
   event?: Event & { club: Club | null }
+}
+
+// One entry per guest slot (1..guest_count) that's been scanned in --
+// a party of 3 needs 3 independent tickets/check-ins, not one shared one.
+export interface CheckedInGuest {
+  guest_number: number
+  checked_in_at: string
+  checked_in_by: string | null
 }
 
 export interface ExperienceInquiry {

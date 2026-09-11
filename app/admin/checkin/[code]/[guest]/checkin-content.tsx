@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { CheckCircle2, Users, Calendar, MapPin, XCircle, Sparkles } from 'lucide-react'
+import { CheckCircle2, Calendar, MapPin, XCircle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
@@ -10,14 +10,15 @@ import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
 
 interface Props {
-  accessRequest: (AccessRequest & { checked_in_at: string | null }) | null
+  accessRequest: AccessRequest | null
+  guestNumber: number
 }
 
-export function CheckinContent({ accessRequest }: Props) {
+export function CheckinContent({ accessRequest, guestNumber }: Props) {
   const [request, setRequest] = useState(accessRequest)
   const [isChecking, setIsChecking] = useState(false)
 
-  if (!request) {
+  if (!request || !guestNumber || guestNumber < 1 || guestNumber > request.guest_count) {
     return (
       <div className="max-w-md mx-auto py-12">
         <Card className="bg-card border-destructive/30">
@@ -31,8 +32,11 @@ export function CheckinContent({ accessRequest }: Props) {
     )
   }
 
-  const { member, event, guest_count, status, checked_in_at, celebration_type, celebration_other } = request
+  const { member, event, guest_count, status, checked_in_guests, celebration_type, celebration_other, access_code } =
+    request
   const club = event?.club
+  const thisGuestCheckIn = checked_in_guests.find((g) => g.guest_number === guestNumber)
+  const guestLabel = guestNumber === 1 ? `${member?.first_name} ${member?.last_name}` : `Guest of ${member?.first_name} ${member?.last_name}`
 
   const handleCheckIn = async () => {
     setIsChecking(true)
@@ -40,12 +44,12 @@ export function CheckinContent({ accessRequest }: Props) {
       const response = await fetch('/api/admin/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessCode: request.access_code }),
+        body: JSON.stringify({ accessCode: access_code, guestNumber }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to check in')
-      setRequest({ ...request, checked_in_at: data.checkedInAt })
-      toast.success(`${member?.first_name} checked in`)
+      setRequest({ ...request, checked_in_guests: data.checkedInGuests })
+      toast.success(`${guestLabel} checked in`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to check in')
     } finally {
@@ -54,12 +58,13 @@ export function CheckinContent({ accessRequest }: Props) {
   }
 
   const notApproved = status !== 'approved'
+  const otherGuestsCheckedIn = checked_in_guests.filter((g) => g.guest_number !== guestNumber).length
 
   return (
     <div className="max-w-md mx-auto py-8">
       <Card
         className={
-          checked_in_at
+          thisGuestCheckIn
             ? 'bg-gold/5 border-gold/40'
             : notApproved
               ? 'bg-card border-destructive/30'
@@ -67,12 +72,14 @@ export function CheckinContent({ accessRequest }: Props) {
         }
       >
         <CardContent className="p-6 text-center space-y-4">
-          {checked_in_at ? (
+          {thisGuestCheckIn ? (
             <>
               <CheckCircle2 className="w-14 h-14 text-gold mx-auto" />
               <div>
                 <p className="text-xl font-semibold text-gold-gradient">Checked In</p>
-                <p className="text-sm text-muted-foreground mt-1">at {format(new Date(checked_in_at), 'h:mm a')}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  at {format(new Date(thisGuestCheckIn.checked_in_at), 'h:mm a')}
+                </p>
               </div>
             </>
           ) : notApproved ? (
@@ -86,18 +93,15 @@ export function CheckinContent({ accessRequest }: Props) {
           ) : null}
 
           <div className="pt-2 border-t border-border/30 text-left space-y-2">
-            <p className="font-medium text-lg text-center">
-              {member?.first_name} {member?.last_name}
+            <p className="font-medium text-lg text-center">{guestLabel}</p>
+            <p className="text-xs text-muted-foreground text-center uppercase tracking-wide">
+              Ticket {guestNumber} of {guest_count}
+              {otherGuestsCheckedIn > 0 &&
+                ` · ${otherGuestsCheckedIn} of ${guest_count - 1} other${guest_count - 1 === 1 ? '' : 's'} already in`}
             </p>
-            {guest_count > 1 && (
-              <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
-                <Users className="w-3.5 h-3.5" />
-                <span>Party of {guest_count}</span>
-              </div>
-            )}
             {event && (
               <>
-                <div className="flex items-center gap-2 text-sm justify-center">
+                <div className="flex items-center gap-2 text-sm justify-center pt-1">
                   <Calendar className="w-3.5 h-3.5 text-gold shrink-0" />
                   <span>
                     {event.title} · {format(parseISO(event.event_date), 'MMM d')}
@@ -119,7 +123,7 @@ export function CheckinContent({ accessRequest }: Props) {
             )}
           </div>
 
-          {!checked_in_at && !notApproved && (
+          {!thisGuestCheckIn && !notApproved && (
             <Button
               onClick={handleCheckIn}
               disabled={isChecking}

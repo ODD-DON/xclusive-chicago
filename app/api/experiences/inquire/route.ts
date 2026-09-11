@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
-import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+import { sendAdminPush, formatPhoneForPush, celebrationPushInfo } from '@/lib/push'
 import { getVisitorGeo } from '@/lib/geo'
 
 const EXPERIENCE_LABELS: Record<string, string> = {
@@ -90,8 +90,14 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanPhone = phone.replace(/\D/g, '')
+    const celebration = celebrationPushInfo(details.celebrationType as string | null | undefined)
+    const experienceLabel = EXPERIENCE_LABELS[experienceType] || experienceType
+    const pushTitle = celebration
+      ? `${EXPERIENCE_EMOJI[experienceType] || ''}${celebration.emoji} ${experienceLabel} + ${celebration.label} Requested`
+      : `${EXPERIENCE_EMOJI[experienceType] || ''} ${experienceLabel} Requested`
+
     await sendAdminPush({
-      title: `${EXPERIENCE_EMOJI[experienceType] || ''} ${EXPERIENCE_LABELS[experienceType] || experienceType} Requested`,
+      title: pushTitle,
       body: `${firstName} ${lastName} · ${formatPhoneForPush(cleanPhone)}${groupSize ? ` · ${groupSize} people` : ''}`,
       url: `/admin/guests?tab=experiences&inquiry=${data.id}`,
     })

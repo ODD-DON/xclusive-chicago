@@ -11,6 +11,15 @@ if (vapidPublicKey && vapidPrivateKey && vapidSubject) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
 }
 
+// Bachelor/bachelorette parties get extra attention (comp bottles, table
+// upsells, etc.), so every notification that carries a celebration_type
+// flags it up front instead of it being buried until the admin opens the app.
+export function celebrationPushInfo(celebrationType?: string | null): { emoji: string; label: string } | null {
+  if (celebrationType === 'Bachelorette') return { emoji: '🎉', label: 'Bachelorette Party' }
+  if (celebrationType === 'Bachelor') return { emoji: '🎉', label: 'Bachelor Party' }
+  return null
+}
+
 export function formatPhoneForPush(phone: string): string {
   const cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 10) {

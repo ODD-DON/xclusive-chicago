@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
-import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+import { sendAdminPush, formatPhoneForPush, celebrationPushInfo } from '@/lib/push'
 import { getVisitorGeo } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
@@ -78,8 +78,11 @@ export async function POST(request: NextRequest) {
       outOfTown ? 'out of town' : null,
     ].filter(Boolean)
 
+    const celebration = celebrationPushInfo(celebrationType)
+    const pushTitle = celebration ? `🍾${celebration.emoji} VIP Table + ${celebration.label} Requested` : '🍾 VIP Table Requested'
+
     await sendAdminPush({
-      title: '🍾 VIP Table Requested',
+      title: pushTitle,
       body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)}${
         details.length ? ` · ${details.join(', ')}` : ''
       }`,

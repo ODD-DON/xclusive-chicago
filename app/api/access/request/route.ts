@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { APP_ID } from '@/lib/types'
 import { nanoid } from 'nanoid'
-import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
+import { sendAdminPush, formatPhoneForPush, celebrationPushInfo } from '@/lib/push'
 import { getVisitorGeo } from '@/lib/geo'
 import { sendAccessEmail } from '@/lib/email'
 
@@ -181,8 +181,10 @@ export async function POST(request: NextRequest) {
     // A star means "just a sign up, nothing else to do" -- the other
     // emojis mark exactly what's being requested so the notification
     // itself says what's needed without opening the app.
-    const interestEmojis: string[] = []
-    const interestLabels: string[] = []
+    const celebration = celebrationPushInfo(celebrationType)
+    const interestEmojis: string[] = celebration ? [celebration.emoji] : []
+    const interestLabels: string[] = celebration ? [celebration.label] : []
+    const requestedCount = interestLabels.length
     if (bottleServiceInterest) {
       interestEmojis.push('🍾')
       interestLabels.push('Bottle')
@@ -197,7 +199,9 @@ export async function POST(request: NextRequest) {
     }
 
     const pushTitle =
-      interestLabels.length > 0 ? `${interestEmojis.join('')} ${interestLabels.join(' + ')} Requested` : '⭐ New Sign Up'
+      interestLabels.length > 0
+        ? `${interestEmojis.join('')} ${interestLabels.join(' + ')} ${interestLabels.length > requestedCount ? 'Requested' : 'Sign Up'}`
+        : '⭐ New Sign Up'
     const eventTitle = event.title || 'an event'
     const statusNote = status === 'pending' ? ' · Needs approval' : status === 'waitlisted' ? ' · Waitlisted' : ''
 

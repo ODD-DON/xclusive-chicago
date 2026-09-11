@@ -29,20 +29,10 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
 
   return (
     <div className="relative bg-card border border-gold/30 rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(212,175,55,0.08)]">
-      {/* Header */}
+      {/* Header -- the logo is the main visual, sized to be recognized at a
+          glance by door staff who are eyeballing tickets, not scanning them. */}
       <div className="relative px-6 pt-6 pb-4 border-b border-border/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 relative shrink-0">
-              <Image src="/logo.png" alt="XCLUSIVE" fill className="object-contain" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                Ticket {guestNumber} of {guest_count}
-              </p>
-              <p className="font-medium text-gold-gradient">XCLUSIVE</p>
-            </div>
-          </div>
+        <div className="absolute top-6 right-6">
           {isCheckedIn ? (
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-gold/20 text-gold flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
@@ -51,6 +41,14 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
           ) : (
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">Valid</span>
           )}
+        </div>
+        <div className="flex flex-col items-center text-center pt-1">
+          <div className="w-20 h-20 relative mb-2 drop-shadow-[0_0_16px_rgba(212,175,55,0.35)]">
+            <Image src="/logo.png" alt="XCLUSIVE" fill className="object-contain" priority />
+          </div>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">
+            {guest_count > 1 ? `Ticket ${guestNumber} of ${guest_count}` : 'Your Ticket'}
+          </p>
         </div>
       </div>
 

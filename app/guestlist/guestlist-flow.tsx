@@ -308,7 +308,6 @@ function RequestAccessDialog({
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [instagram, setInstagram] = useState('')
-  const [guestCount, setGuestCount] = useState('1')
   const [smsConsent, setSmsConsent] = useState(false)
   const [celebrationType, setCelebrationType] = useState('')
   const [celebrationOther, setCelebrationOther] = useState('')
@@ -330,7 +329,6 @@ function RequestAccessDialog({
     setPhone('')
     setEmail('')
     setInstagram('')
-    setGuestCount('1')
     setSmsConsent(false)
     setCelebrationType('')
     setCelebrationOther('')
@@ -390,7 +388,10 @@ function RequestAccessDialog({
           phone,
           email: email.trim() || null,
           instagram: instagram.trim().replace(/^@/, ''),
-          guestCount: parseInt(guestCount, 10),
+          // One person per signup, always -- bringing friends means sharing
+          // the invite link on the confirmation page so each of them
+          // submits their own request with their own real name and ticket.
+          guestCount: 1,
           smsConsent,
           celebrationType: celebrationType || null,
           celebrationOther: celebrationType === 'Other' ? celebrationOther.trim() || null : null,
@@ -476,38 +477,11 @@ function RequestAccessDialog({
                       <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="bg-muted border-border/50" />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Number of Guests</Label>
-                    <div className="flex items-center justify-between gap-4 bg-muted border border-border/50 rounded-lg px-3 h-9 w-full">
-                      <button
-                        type="button"
-                        onClick={() => setGuestCount((c) => String(Math.max(1, parseInt(c, 10) - 1)))}
-                        disabled={parseInt(guestCount, 10) <= 1}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-lg leading-none hover:bg-background/60 disabled:opacity-30 transition-colors shrink-0"
-                      >
-                        −
-                      </button>
-                      <span className="text-center text-sm">
-                        {guestCount} {parseInt(guestCount, 10) === 1 ? 'guest' : 'guests'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setGuestCount((c) => String(Math.min(8, parseInt(c, 10) + 1)))}
-                        disabled={parseInt(guestCount, 10) >= 8}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-lg leading-none hover:bg-background/60 disabled:opacity-30 transition-colors shrink-0"
-                      >
-                        +
-                      </button>
-                    </div>
-                    {parseInt(guestCount, 10) > 1 && (
-                      <div className="bg-gold/10 border border-gold/20 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">
-                          Access is granted per person. For the fastest approval, have everyone in your group
-                          request their own access instead of one person requesting for the group — you&apos;ll get
-                          a link to share with them once you submit.
-                        </p>
-                      </div>
-                    )}
+                  <div className="bg-gold/10 border border-gold/20 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">
+                      Access is per person, so this request is just for you. Bringing friends? You&apos;ll get a link
+                      to share once you submit -- everyone requests (and gets their own ticket) individually.
+                    </p>
                   </div>
                 </>
               )}

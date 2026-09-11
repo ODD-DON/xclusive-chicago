@@ -194,7 +194,7 @@ export function AccessContent({ accessRequest }: Props) {
             </div>
           )}
 
-          {guest_count > 1 && status !== 'denied' && (
+          {status !== 'denied' && (
             <div className="p-6 pt-4 border-t border-border/30">
               <p className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground mb-2">
                 Optional — invite your group
@@ -202,8 +202,8 @@ export function AccessContent({ accessRequest }: Props) {
               <div className="flex items-start gap-2 text-xs text-muted-foreground mb-2">
                 <Users className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <p>
-                  Access is granted per person. Share this link so the rest of your group ({guest_count - 1} more)
-                  can request their own access — we&apos;ll know you&apos;re together.
+                  Access is per person, so bringing friends means they request their own -- share this link and
+                  we&apos;ll know you&apos;re together.
                 </p>
               </div>
               <div className="space-y-2">

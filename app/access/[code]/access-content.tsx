@@ -29,6 +29,18 @@ export function AccessContent({ accessRequest }: Props) {
   // actually gets a guest through the door, not a gate in front of it.
   const rsvpUrl = event?.ticket_url || null
   const [copied, setCopied] = useState(false)
+  const [ticketLinkCopied, setTicketLinkCopied] = useState(false)
+
+  const copyTicketLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setTicketLinkCopied(true)
+      toast.success('Link copied')
+      setTimeout(() => setTicketLinkCopied(false), 2000)
+    } catch {
+      toast.error('Could not copy link')
+    }
+  }
 
   // window is only read inside these handlers (never in the component body)
   // so this component stays safe to server-render.
@@ -123,7 +135,7 @@ export function AccessContent({ accessRequest }: Props) {
               <p className="text-sm text-muted-foreground mb-5">
                 {member?.first_name}, you&apos;re on the Xclusive Chicago guest list.{' '}
                 {guest_count > 1
-                  ? `Here ${guest_count === 2 ? 'are your 2 tickets' : `are your ${guest_count} tickets`} for the door -- one per person.`
+                  ? `Here ${guest_count === 2 ? 'are your 2 tickets' : `are your ${guest_count} tickets`} for the door, one per person.`
                   : 'This is your ticket for the door.'}
               </p>
               <div className="space-y-4">
@@ -131,13 +143,25 @@ export function AccessContent({ accessRequest }: Props) {
                   <TicketCard key={guestNumber} accessRequest={accessRequest} guestNumber={guestNumber} />
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                We emailed this page to you too. Save it or bookmark it, texting isn&apos;t available yet, so this
+                link is the only way back to your ticket.
+              </p>
+              <button
+                type="button"
+                onClick={copyTicketLink}
+                className="inline-flex items-center gap-1.5 mt-2 text-xs text-gold hover:text-gold-light transition-colors"
+              >
+                <Copy className="w-3 h-3" />
+                {ticketLinkCopied ? 'Link Copied' : 'Copy This Link'}
+              </button>
               {rsvpUrl && (
                 <a
                   href={rsvpUrl}
                   target="_blank"
                   rel="noreferrer"
                   onClick={markRsvpStarted}
-                  className="inline-block mt-4 text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+                  className="block mt-3 text-xs text-muted-foreground underline hover:text-foreground transition-colors"
                 >
                   Also RSVP with {club?.name || 'the venue'} directly
                 </a>
@@ -152,7 +176,8 @@ export function AccessContent({ accessRequest }: Props) {
               </div>
               <h1 className="text-xl font-semibold mb-1">Request Received</h1>
               <p className="text-sm text-muted-foreground">
-                We&apos;re reviewing access requests for this event. We&apos;ll text you when your access is confirmed.
+                We&apos;re reviewing access requests for this event. We emailed you this page, so check your inbox
+                and save it, your ticket will appear here once you&apos;re approved.
               </p>
             </div>
           )}
@@ -197,12 +222,12 @@ export function AccessContent({ accessRequest }: Props) {
           {status !== 'denied' && (
             <div className="p-6 pt-4 border-t border-border/30">
               <p className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground mb-2">
-                Optional — invite your group
+                Optional: invite your group
               </p>
               <div className="flex items-start gap-2 text-xs text-muted-foreground mb-2">
                 <Users className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <p>
-                  Access is per person, so bringing friends means they request their own -- share this link and
+                  Access is per person, so bringing friends means they request their own. Share this link and
                   we&apos;ll know you&apos;re together.
                 </p>
               </div>

@@ -4,6 +4,7 @@ import { APP_ID } from '@/lib/types'
 import { nanoid } from 'nanoid'
 import { sendAdminPush, formatPhoneForPush } from '@/lib/push'
 import { getVisitorGeo } from '@/lib/geo'
+import { sendAccessEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,8 +28,12 @@ export async function POST(request: NextRequest) {
       referredBy,
     } = body
 
-    if (!eventId || !firstName || !lastName || !phone || !instagram) {
+    if (!eventId || !firstName || !lastName || !phone || !instagram || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+      return NextResponse.json({ error: 'Enter a valid email' }, { status: 400 })
     }
 
     if (!smsConsent) {
@@ -44,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     const { data: event, error: eventError } = await supabase
       .from('xc_events')
-      .select('id, title, allocation, approval_mode, waitlist_enabled, is_active, club:xc_clubs(name)')
+      .select('id, title, event_date, allocation, approval_mode, waitlist_enabled, is_active, club:xc_clubs(name)')
       .eq('id', eventId)
       .single()
 
@@ -65,7 +70,7 @@ export async function POST(request: NextRequest) {
           first_name: String(firstName).trim(),
           last_name: String(lastName).trim(),
           phone: cleanPhone,
-          email: email || null,
+          email: String(email).trim(),
           instagram: String(instagram).trim().replace(/^@/, ''),
           sms_consent: !!smsConsent,
           email_consent: !!emailConsent,
@@ -142,6 +147,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to submit your request' }, { status: 500 })
     }
 
+    const clubName = (event as { club?: { name?: string } | null }).club?.name || null
+
+    // Fire-and-forget: SMS isn't available yet (Twilio A2P review), so this
+    // email is the guest's only copy of their access link. A delivery
+    // failure here shouldn't fail the request they already successfully
+    // submitted -- sendAccessEmail swallows its own errors and just logs.
+    sendAccessEmail({
+      to: String(email).trim(),
+      firstName: String(firstName).trim(),
+      eventTitle: event.title || 'an event',
+      clubName,
+      eventDate: event.event_date,
+      status,
+      accessCode,
+    }).then((result) => {
+      if (!result.sent) console.error('[access email] not sent:', result.error)
+    })
+
     if (bottleServiceInterest) {
       await supabase.from('xc_vip_requests').insert({
         app_id: APP_ID,
@@ -162,7 +185,6 @@ export async function POST(request: NextRequest) {
 
     if (interests.length > 0) {
       const eventTitle = event.title || 'an event'
-      const clubName = (event as { club?: { name?: string } | null }).club?.name
       await sendAdminPush({
         title: `New ${interests.join(' + ')} Interest`,
         body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)} · ${eventTitle}${clubName ? ` @ ${clubName}` : ''}`,

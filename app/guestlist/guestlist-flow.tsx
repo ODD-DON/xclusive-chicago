@@ -66,6 +66,9 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
               <span className="font-medium text-gold-gradient">Xclusive Access</span>
             </div>
           </div>
+          <Link href="/access/lookup" className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
+            Find my ticket
+          </Link>
         </div>
       </header>
 
@@ -83,7 +86,7 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
             <h3 className="text-lg font-medium mb-2">No access live yet</h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-6">
               New access goes up weekly, so if you&apos;re local, check back soon. Coming in from out of town and
-              need something locked in before your trip? Don&apos;t wait around — book VIP table access in
+              need something locked in before your trip? Don&apos;t wait around, book VIP table access in
               advance instead.
             </p>
             <Link href="/experiences/vip-tables">
@@ -345,7 +348,13 @@ function RequestAccessDialog({
 
   const canContinue = () => {
     if (step === 0) return !!firstName.trim() && !!lastName.trim()
-    if (step === 1) return !!phone.replace(/\D/g, '').match(/^\d{10,}$/) && !!instagram.trim() && smsConsent
+    if (step === 1)
+      return (
+        !!phone.replace(/\D/g, '').match(/^\d{10,}$/) &&
+        !!instagram.trim() &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+        smsConsent
+      )
     return true
   }
 
@@ -359,7 +368,9 @@ function RequestAccessDialog({
             ? 'Enter a valid phone number'
             : !instagram.trim()
               ? 'Enter your Instagram handle'
-              : 'Please agree to receive SMS updates to continue',
+              : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+                ? 'Enter a valid email, that\'s how we\'ll send your access link'
+                : 'Please agree to receive SMS updates to continue',
         )
       }
       return
@@ -386,7 +397,7 @@ function RequestAccessDialog({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           phone,
-          email: email.trim() || null,
+          email: email.trim(),
           instagram: instagram.trim().replace(/^@/, ''),
           // One person per signup, always -- bringing friends means sharing
           // the invite link on the confirmation page so each of them
@@ -480,7 +491,7 @@ function RequestAccessDialog({
                   <div className="bg-gold/10 border border-gold/20 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">
                       Access is per person, so this request is just for you. Bringing friends? You&apos;ll get a link
-                      to share once you submit -- everyone requests (and gets their own ticket) individually.
+                      to share once you submit, so everyone requests (and gets their own ticket) individually.
                     </p>
                   </div>
                 </>
@@ -512,8 +523,19 @@ function RequestAccessDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email (optional)</Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted border-border/50" />
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@email.com"
+                      className="bg-muted border-border/50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      We&apos;ll email your access link here. Texting isn&apos;t available yet.
+                    </p>
                   </div>
 
                   <label className="flex items-start gap-3 cursor-pointer group p-3 -mx-3 rounded-lg hover:bg-muted/30 active:bg-muted/50 transition-colors">

@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     ].filter(Boolean)
 
     await sendAdminPush({
-      title: 'New VIP Table Inquiry',
+      title: '🍾 VIP Table Requested',
       body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)}${
         details.length ? ` · ${details.join(', ')}` : ''
       }`,

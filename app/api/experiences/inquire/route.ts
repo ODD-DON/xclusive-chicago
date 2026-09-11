@@ -9,6 +9,11 @@ const EXPERIENCE_LABELS: Record<string, string> = {
   boat_day: 'Boat Day',
 }
 
+const EXPERIENCE_EMOJI: Record<string, string> = {
+  party_bus: '🚌',
+  boat_day: '🛥️',
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -86,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     const cleanPhone = phone.replace(/\D/g, '')
     await sendAdminPush({
-      title: `New ${EXPERIENCE_LABELS[experienceType] || experienceType} Inquiry`,
+      title: `${EXPERIENCE_EMOJI[experienceType] || ''} ${EXPERIENCE_LABELS[experienceType] || experienceType} Requested`,
       body: `${firstName} ${lastName} · ${formatPhoneForPush(cleanPhone)}${groupSize ? ` · ${groupSize} people` : ''}`,
       url: `/admin/guests?tab=experiences&inquiry=${data.id}`,
     })

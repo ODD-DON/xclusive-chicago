@@ -178,19 +178,34 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const interests: string[] = []
-    if (bottleServiceInterest) interests.push(`Bottle Service${bottleBudget ? ` (${bottleBudget})` : ''}`)
-    if (interestBoat) interests.push('Boat Party')
-    if (interestPartyBus) interests.push('Party Bus')
-
-    if (interests.length > 0) {
-      const eventTitle = event.title || 'an event'
-      await sendAdminPush({
-        title: `New ${interests.join(' + ')} Interest`,
-        body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)} · ${eventTitle}${clubName ? ` @ ${clubName}` : ''}`,
-        url: `/admin/guests/${member.phone}`,
-      })
+    // A star means "just a sign up, nothing else to do" -- the other
+    // emojis mark exactly what's being requested so the notification
+    // itself says what's needed without opening the app.
+    const interestEmojis: string[] = []
+    const interestLabels: string[] = []
+    if (bottleServiceInterest) {
+      interestEmojis.push('🍾')
+      interestLabels.push('Bottle')
     }
+    if (interestBoat) {
+      interestEmojis.push('🛥️')
+      interestLabels.push('Boat')
+    }
+    if (interestPartyBus) {
+      interestEmojis.push('🚌')
+      interestLabels.push('Party Bus')
+    }
+
+    const pushTitle =
+      interestLabels.length > 0 ? `${interestEmojis.join('')} ${interestLabels.join(' + ')} Requested` : '⭐ New Sign Up'
+    const eventTitle = event.title || 'an event'
+    const statusNote = status === 'pending' ? ' · Needs approval' : status === 'waitlisted' ? ' · Waitlisted' : ''
+
+    await sendAdminPush({
+      title: pushTitle,
+      body: `${String(firstName).trim()} ${String(lastName).trim()} · ${formatPhoneForPush(cleanPhone)} · ${eventTitle}${clubName ? ` @ ${clubName}` : ''}${bottleServiceInterest && bottleBudget ? ` · Budget: ${bottleBudget}` : ''}${statusNote}`,
+      url: `/admin/guests/${member.phone}`,
+    })
 
     return NextResponse.json({ success: true, accessCode, status })
   } catch (error) {

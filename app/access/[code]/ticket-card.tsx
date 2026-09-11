@@ -2,9 +2,17 @@
 
 import Image from 'next/image'
 import { format, parseISO } from 'date-fns'
-import { Calendar, MapPin, CheckCircle2, Sparkles } from 'lucide-react'
+import { Calendar, MapPin, Clock, CheckCircle2, Sparkles } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import type { AccessRequest } from '@/lib/types'
+import { effectiveCutoffTime } from '@/lib/access-status'
+
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number)
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`
+}
 
 interface Props {
   accessRequest: AccessRequest
@@ -22,6 +30,7 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
 
   const checkInUrl = `https://xclusivechicago.com/admin/checkin/${access_code}/${guestNumber}`
   const isCheckedIn = checked_in_guests.some((g) => g.guest_number === guestNumber)
+  const cutoffTime = effectiveCutoffTime(event, club)
   const guestLabel =
     guestNumber === 1
       ? `${member?.first_name} ${member?.last_name}`
@@ -66,6 +75,12 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
             <MapPin className="w-4 h-4 text-gold shrink-0" />
             <span>{club.name}</span>
           </div>
+          {cutoffTime && (
+            <div className="flex items-center gap-3 text-sm">
+              <Clock className="w-4 h-4 text-gold shrink-0" />
+              <span>Free entry before {formatTime(cutoffTime)}</span>
+            </div>
+          )}
         </div>
       </div>
 

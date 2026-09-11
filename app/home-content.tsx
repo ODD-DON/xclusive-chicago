@@ -93,6 +93,15 @@ export function HomeContent({ events, approvedCounts }: HomeContentProps) {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
+            <Link href="/my">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10 hover:text-white font-medium text-lg px-10 py-6 rounded-full transition-all duration-300"
+              >
+                Log In
+              </Button>
+            </Link>
           </motion.div>
 
           <motion.div

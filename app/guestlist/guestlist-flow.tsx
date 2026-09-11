@@ -66,8 +66,8 @@ export function EventFeed({ events, approvedCounts, referredBy, initialEventId }
               <span className="font-medium text-gold-gradient">Xclusive Access</span>
             </div>
           </div>
-          <Link href="/access/lookup" className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-            Find my ticket
+          <Link href="/my" className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
+            My Access
           </Link>
         </div>
       </header>

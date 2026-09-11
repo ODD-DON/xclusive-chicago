@@ -379,7 +379,7 @@ function RequestAccessDialog({
             : !instagram.trim()
               ? 'Enter your Instagram handle'
               : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-                ? 'Enter a valid email, that\'s how we\'ll send your access link'
+                ? 'Enter a valid email'
                 : 'Please agree to receive SMS updates to continue',
         )
       }
@@ -543,9 +543,6 @@ function RequestAccessDialog({
                       placeholder="you@email.com"
                       className="bg-muted border-border/50"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      We&apos;ll email your access link here. Texting isn&apos;t available yet.
-                    </p>
                   </div>
 
                   <label className="flex items-start gap-3 cursor-pointer group p-3 -mx-3 rounded-lg hover:bg-muted/30 active:bg-muted/50 transition-colors">

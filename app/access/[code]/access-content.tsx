@@ -144,8 +144,11 @@ export function AccessContent({ accessRequest }: Props) {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                We emailed this page to you too. Save it or bookmark it, texting isn&apos;t available yet, so this
-                link is the only way back to your ticket.
+                Save or bookmark this page. You can also log in with your phone number at{' '}
+                <Link href="/my" className="text-gold hover:underline">
+                  My Access
+                </Link>{' '}
+                anytime to find it again.
               </p>
               <button
                 type="button"
@@ -176,8 +179,11 @@ export function AccessContent({ accessRequest }: Props) {
               </div>
               <h1 className="text-xl font-semibold mb-1">Request Received</h1>
               <p className="text-sm text-muted-foreground">
-                We&apos;re reviewing access requests for this event. We emailed you this page, so check your inbox
-                and save it, your ticket will appear here once you&apos;re approved.
+                We&apos;re reviewing access requests for this event. Save this page, or log in anytime at{' '}
+                <Link href="/my" className="text-gold hover:underline">
+                  My Access
+                </Link>{' '}
+                with your phone number, your ticket will appear here once you&apos;re approved.
               </p>
             </div>
           )}

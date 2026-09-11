@@ -86,6 +86,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save your info' }, { status: 500 })
     }
 
+    // Nothing stopped the same phone number from submitting for the same
+    // event over and over -- each resubmit created a brand new row (its own
+    // approval, email, and admin push), so a guest who didn't realize it
+    // already worked could end up with half a dozen duplicate tickets. If
+    // they already have a request for this event, just hand that one back.
+    const { data: existingRequest } = await supabase
+      .from('xc_access_requests')
+      .select('access_code, status')
+      .eq('app_id', APP_ID)
+      .eq('event_id', eventId)
+      .eq('member_id', member.id)
+      .maybeSingle()
+
+    if (existingRequest) {
+      return NextResponse.json({
+        success: true,
+        accessCode: existingRequest.access_code,
+        status: existingRequest.status,
+        alreadyRequested: true,
+      })
+    }
+
     let status: 'approved' | 'pending' | 'waitlisted' = 'approved'
 
     if (event.approval_mode === 'manual') {

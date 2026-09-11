@@ -430,6 +430,9 @@ function RequestAccessDialog({
         throw new Error(data.error || 'Failed to submit your request')
       }
 
+      if (data.alreadyRequested) {
+        toast.info("You've already requested access to this event")
+      }
       router.push(`/access/${data.accessCode}`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Something went wrong')

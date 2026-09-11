@@ -16,24 +16,40 @@ interface SendAccessEmailArgs {
   accessCode: string
 }
 
-const STATUS_COPY: Record<SendAccessEmailArgs['status'], { subject: string; heading: string; body: string }> = {
+const STATUS_COPY: Record<
+  SendAccessEmailArgs['status'],
+  { subject: string; eyebrow: string; heading: string; body: string; cta: string; noun: string }
+> = {
   approved: {
-    subject: 'Your Xclusive Chicago access is confirmed',
-    heading: 'Access Granted',
-    body: 'You\'re on the guest list. Open your ticket below, and save this email, it\'s the only way to get back to it.',
+    subject: "⭐ You're approved for Xclusive Chicago",
+    eyebrow: 'Access Granted',
+    heading: "You're On The List",
+    body: "you're approved. Your ticket is ready below, show it to staff at the door.",
+    cta: 'View My Ticket',
+    noun: 'ticket',
   },
   pending: {
     subject: 'Your Xclusive Chicago access request',
-    heading: 'Request Received',
-    body: 'We\'re reviewing access requests for this event. Save this email, your ticket will appear at the link below once you\'re approved.',
+    eyebrow: 'Request Received',
+    heading: "We've Got Your Request",
+    body: "we're reviewing access requests for this event. Your ticket will appear at the link below the moment you're approved.",
+    cta: 'Check My Status',
+    noun: 'status',
   },
   waitlisted: {
-    subject: 'You\'re on the Xclusive Chicago waitlist',
-    heading: 'Waitlisted',
-    body: 'This event is at capacity. We\'ll reach out if more access opens up, so save this email to check your status.',
+    subject: "You're on the Xclusive Chicago waitlist",
+    eyebrow: 'Waitlisted',
+    heading: "You're On The Waitlist",
+    body: "this event is at capacity. We'll reach out if more access opens up.",
+    cta: 'Check My Status',
+    noun: 'status',
   },
 }
 
+// Table-based layout (not flexbox/grid) and inline styles throughout --
+// Outlook desktop and a chunk of mobile mail clients still render email
+// with a stripped-down engine that ignores modern CSS, so this stays
+// close to the lowest-common-denominator HTML email actually needs.
 export async function sendAccessEmail(args: SendAccessEmailArgs): Promise<{ sent: boolean; error?: string }> {
   if (!resend) return { sent: false, error: 'RESEND_API_KEY not configured' }
 
@@ -50,31 +66,101 @@ export async function sendAccessEmail(args: SendAccessEmailArgs): Promise<{ sent
       })
     : null
 
+  const html = `
+<!DOCTYPE html>
+<html>
+  <body style="margin:0; padding:0; background:#050505;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">${copy.body}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050505;">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+            <tr>
+              <td align="center" style="padding-bottom:28px;">
+                <img src="https://xclusivechicago.com/logo.png" alt="XCLUSIVE" width="76" style="display:block; border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#111111; border:1px solid rgba(212,175,55,0.25); border-radius:20px; padding:36px 28px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding-bottom:8px;">
+                      <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#d4af37; font-weight:700;">
+                        ${copy.eyebrow}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-bottom:14px;">
+                      <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:25px; font-weight:700; color:#ffffff; line-height:1.3;">
+                        ${copy.heading}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-bottom:28px;">
+                      <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:14px; line-height:1.6; color:#b8b8b8;">
+                        Hey ${args.firstName}, ${copy.body}
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a; border:1px solid rgba(212,175,55,0.3); border-radius:14px; margin-bottom:26px;">
+                  <tr>
+                    <td align="center" style="padding:22px 20px 16px; border-bottom:1px dashed rgba(212,175,55,0.25); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                      <span style="font-size:17px; font-weight:700; color:#ffffff;">${args.eventTitle}</span>
+                      ${args.clubName ? `<br /><span style="font-size:13px; color:#999999;">${args.clubName}</span>` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding:16px 20px 20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                      ${dateLine ? `<span style="font-size:13px; color:#d4af37; font-weight:600;">${dateLine}</span><br />` : ''}
+                      <span style="font-size:12px; color:#777777;">Guest: ${args.firstName}</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="background:#d4af37; border-radius:12px;">
+                      <a href="${accessUrl}" style="display:block; padding:16px 24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:15px; font-weight:700; color:#0a0a0a; text-decoration:none;">
+                        ${copy.cta}
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding-top:20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                      <span style="font-size:12px; line-height:1.6; color:#777777;">
+                        Save this email, it&rsquo;s the fastest way back to your ${copy.noun}.
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding-top:24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                <span style="font-size:11px; color:#555555;">Xclusive Chicago &middot; If you didn&rsquo;t request this, you can ignore this email.</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+  `
+
   try {
     const result = await resend.emails.send({
       from,
       to: args.to,
       subject: copy.subject,
-      html: `
-        <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #0a0a0a; color: #f0f0f0; padding: 32px 24px; border-radius: 16px;">
-          <p style="color: #d4af37; text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; margin: 0 0 16px;">XCLUSIVE CHICAGO</p>
-          <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 12px; color: #d4af37;">${copy.heading}</h1>
-          <p style="font-size: 14px; line-height: 1.6; color: #cfcfcf; margin: 0 0 20px;">
-            Hey ${args.firstName}, ${copy.body}
-          </p>
-          <div style="background: #161616; border: 1px solid rgba(212,175,55,0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-            <p style="font-size: 15px; font-weight: 600; margin: 0 0 4px;">${args.eventTitle}</p>
-            ${args.clubName ? `<p style="font-size: 13px; color: #999; margin: 0 0 4px;">${args.clubName}</p>` : ''}
-            ${dateLine ? `<p style="font-size: 13px; color: #999; margin: 0;">${dateLine}</p>` : ''}
-          </div>
-          <a href="${accessUrl}" style="display: block; text-align: center; background: #d4af37; color: #0a0a0a; text-decoration: none; font-weight: 600; padding: 14px; border-radius: 10px; font-size: 14px;">
-            View Your Access
-          </a>
-          <p style="font-size: 11px; color: #666; margin: 24px 0 0; line-height: 1.5;">
-            Xclusive Chicago. If you didn't request this, you can ignore this email.
-          </p>
-        </div>
-      `,
+      html,
     })
     if (result.error) return { sent: false, error: result.error.message }
     return { sent: true }

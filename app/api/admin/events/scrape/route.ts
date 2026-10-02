@@ -42,6 +42,24 @@ function extractJsonLd(html: string): unknown[] {
   return blocks
 }
 
+// speakeasygo.com's own JSON-LD startDate is wrong by several hours (its
+// own Next.js page data, pageProps.eventStartDate, has the correct time
+// with an explicit UTC offset -- the JSON-LD block is generated separately
+// and off). Since pageProps is what the site's own page actually renders
+// from, a visitor would notice if it were wrong, so it's the more trustworthy
+// of the two when both are present.
+function extractNextDataStartDate(html: string): string | null {
+  const match = html.match(/__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+  if (!match) return null
+  try {
+    const data = JSON.parse(match[1])
+    const value = data?.props?.pageProps?.eventStartDate
+    return typeof value === 'string' ? value : null
+  } catch {
+    return null
+  }
+}
+
 function extractMetaTag(html: string, property: string): string | null {
   const re = new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']*)["']`, 'i')
   const match = html.match(re)
@@ -94,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     let name: string | null = eventNode?.name || null
-    let startDate: string | null = eventNode?.startDate || null
+    let startDate: string | null = extractNextDataStartDate(html) || eventNode?.startDate || null
     let image: string | null = null
     let description: string | null = eventNode?.description || null
     let venueName: string | null = null

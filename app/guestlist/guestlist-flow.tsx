@@ -696,7 +696,13 @@ function RequestAccessDialog({
               onClick={handleSubmit}
               className="flex-1 h-12 text-base rounded-lg bg-gold hover:bg-gold-light text-background"
             >
-              {isSubmitting ? <Spinner className="w-4 h-4" /> : 'Request Access'}
+              {isSubmitting ? (
+                <Spinner className="w-4 h-4" />
+              ) : bottleServiceInterest || interestBoat || interestPartyBus ? (
+                'Request Access'
+              ) : (
+                'No Thanks, Get My Access'
+              )}
             </Button>
           )}
         </div>

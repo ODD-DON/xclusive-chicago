@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
-import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy, MessageCircle } from 'lucide-react'
+import { Check, Clock, Calendar, MapPin, ArrowLeft, Users, Copy, MessageCircle, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { AccessRequest } from '@/lib/types'
@@ -20,15 +20,6 @@ interface Props {
 export function AccessContent({ accessRequest }: Props) {
   const { status, member, event, access_code, guest_count } = accessRequest
   const club = event?.club
-  // Always the exact link pasted into the admin, byte-for-byte -- DICE's
-  // link.dice.fm short links (Branch-powered) don't tolerate appended query
-  // params, they break the short link's own redirect/attribution lookup and
-  // silently drop the referral tracking baked into it.
-  //
-  // This is now an optional, secondary action -- the venue's own ticketing
-  // has had outages, so the XCLUSIVE ticket (below) is the credential that
-  // actually gets a guest through the door, not a gate in front of it.
-  const rsvpUrl = event?.ticket_url || null
   const [copied, setCopied] = useState(false)
   const [ticketLinkCopied, setTicketLinkCopied] = useState(false)
   // Landed here from a resubmit (guestlist-flow.tsx tags the redirect) --
@@ -113,10 +104,6 @@ export function AccessContent({ accessRequest }: Props) {
     frame()
   }, [status])
 
-  const markRsvpStarted = () => {
-    fetch(`/api/access/${access_code}/rsvp`, { method: 'POST' }).catch(() => {})
-  }
-
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -162,6 +149,14 @@ export function AccessContent({ accessRequest }: Props) {
                   <TicketCard key={guestNumber} accessRequest={accessRequest} guestNumber={guestNumber} />
                 ))}
               </div>
+              {member?.email && (
+                <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3 text-sm">
+                  <Mail className="w-4 h-4 text-gold shrink-0" />
+                  <p className="text-left">
+                    A copy of your ticket was sent to <span className="font-medium">{member.email}</span>
+                  </p>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-4">
                 Save or bookmark this page. You can also log in with your phone number at{' '}
                 <Link href="/my" className="text-gold hover:underline">
@@ -177,17 +172,6 @@ export function AccessContent({ accessRequest }: Props) {
                 <Copy className="w-3 h-3" />
                 {ticketLinkCopied ? 'Link Copied' : 'Copy This Link'}
               </button>
-              {rsvpUrl && (
-                <a
-                  href={rsvpUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={markRsvpStarted}
-                  className="block mt-3 text-xs text-muted-foreground underline hover:text-foreground transition-colors"
-                >
-                  Also RSVP with {club?.name || 'the venue'} directly
-                </a>
-              )}
             </div>
           )}
 
@@ -198,7 +182,7 @@ export function AccessContent({ accessRequest }: Props) {
               </div>
               <h1 className="text-xl font-semibold mb-1">Request Received</h1>
               <p className="text-sm text-muted-foreground">
-                We&apos;re reviewing access requests for this event. Save this page, or log in anytime at{' '}
+                We&apos;re reviewing access requests for this event, and we emailed you a copy of this page. Save it, or log in anytime at{' '}
                 <Link href="/my" className="text-gold hover:underline">
                   My Access
                 </Link>{' '}

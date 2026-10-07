@@ -5,7 +5,7 @@ import { format, parseISO } from 'date-fns'
 import { CheckCircle2 } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import type { AccessRequest } from '@/lib/types'
-import { effectiveCutoffTime } from '@/lib/access-status'
+import { effectiveCutoffTime, effectiveUnlockTime } from '@/lib/access-status'
 
 function formatTime(time: string): string {
   const [hours, minutes] = time.split(':').map(Number)
@@ -45,6 +45,7 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
   const checkInUrl = `https://xclusivechicago.com/admin/checkin/${access_code}/${guestNumber}`
   const isCheckedIn = checked_in_guests.some((g) => g.guest_number === guestNumber)
   const cutoffTime = effectiveCutoffTime(event, club)
+  const doorsTime = effectiveUnlockTime(event, club)
   const flyer = event.image_url || club.image_url
   const guestLabel =
     guestNumber === 1
@@ -88,7 +89,16 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
           <p className="text-sm text-muted-foreground mt-0.5">
             {format(parseISO(event.event_date), 'EEE, MMM d')} · {club.name}
           </p>
-          {cutoffTime && <p className="text-xs text-gold mt-1">Free entry before {formatTime(cutoffTime)}</p>}
+          {(doorsTime || cutoffTime) && (
+            <p className="text-xs text-gold mt-1">
+              {[
+                doorsTime && `Doors ${formatTime(doorsTime)}`,
+                cutoffTime && `Free before ${formatTime(cutoffTime)}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
         </div>
       </div>
 

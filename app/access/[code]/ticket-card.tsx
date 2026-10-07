@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { format, parseISO } from 'date-fns'
-import { Calendar, MapPin, Clock, CheckCircle2, Sparkles } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import type { AccessRequest } from '@/lib/types'
 import { effectiveCutoffTime } from '@/lib/access-status'
@@ -19,13 +19,13 @@ interface Props {
   guestNumber: number
 }
 
-// A perforation between ticket sections: dashed line with a half-circle
-// punched out of each edge, like a real tear-off stub.
+// A perforation between the event info and the stub: dashed line with a
+// half-circle punched out of each edge, like a real tear-off ticket.
 function Perforation() {
   return (
-    <div className="relative h-0 border-t border-dashed border-gold/25">
-      <div className="absolute -left-3 -top-3 w-6 h-6 rounded-full bg-background border border-gold/30" />
-      <div className="absolute -right-3 -top-3 w-6 h-6 rounded-full bg-background border border-gold/30" />
+    <div className="relative h-0 border-t border-dashed border-gold/30">
+      <div className="absolute -left-3 -top-3 w-6 h-6 rounded-full bg-background border border-gold/40" />
+      <div className="absolute -right-3 -top-3 w-6 h-6 rounded-full bg-background border border-gold/40" />
     </div>
   )
 }
@@ -33,9 +33,12 @@ function Perforation() {
 // One ticket per guest -- a party of 3 gets 3 of these, each with its own
 // QR code, so each person can be scanned in independently at the door
 // instead of one scan covering the whole group.
+//
+// Kept deliberately small: the XCLUSIVE brand band, what/when/where, and the
+// guest + QR, all visible on a phone screen without scrolling. Door staff
+// only need to recognize the brand and match the name.
 export function TicketCard({ accessRequest, guestNumber }: Props) {
-  const { member, event, access_code, guest_count, celebration_type, celebration_other, checked_in_guests } =
-    accessRequest
+  const { member, event, access_code, guest_count, checked_in_guests } = accessRequest
   const club = event?.club
   if (!event || !club) return null
 
@@ -52,74 +55,55 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
   const ticketNumber = `${access_code.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}-${guestNumber}`
 
   return (
-    <div className="relative bg-card border border-gold/40 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(212,175,55,0.12)]">
-      {/* The flyer is the backdrop and the guest + QR sit on it, so the one
-          thing door staff need is on screen without scrolling. */}
-      <div className="relative w-full aspect-square bg-muted">
-        {flyer && <Image src={flyer} alt={event.title || 'Event flyer'} fill className="object-cover" priority />}
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 via-60% to-black/30" />
-
-        <div className="absolute top-4 left-4 w-12 h-12 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)]">
-          <Image src="/logo.png" alt="XCLUSIVE" fill className="object-contain" />
+    <div className="relative bg-card border border-gold/40 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(212,175,55,0.12)]">
+      {/* Brand band -- the thing door staff look for. */}
+      <div className="flex items-center justify-between gap-3 bg-black px-4 py-2.5 border-b border-gold/40">
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-9 h-9 shrink-0">
+            <Image src="/logo.png" alt="XCLUSIVE" fill className="object-contain" priority />
+          </div>
+          <span className="text-gold-gradient text-sm font-semibold tracking-[0.3em]">XCLUSIVE</span>
         </div>
-        <div className="absolute top-4 right-4">
-          {isCheckedIn ? (
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gold text-background flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              Checked In
-            </span>
-          ) : (
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-black/60 backdrop-blur text-gold border border-gold/40 uppercase tracking-wider">
-              Valid
-            </span>
-          )}
-        </div>
+        {isCheckedIn ? (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gold text-background flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            Checked In
+          </span>
+        ) : (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-gold border border-gold/50 uppercase tracking-wider">
+            Valid
+          </span>
+        )}
       </div>
 
-      <div className="relative -mt-24 px-6 pb-6 text-center">
-        <p className="text-[11px] text-gold uppercase tracking-[0.25em] mb-0.5">
-          {guest_count > 1 ? `Admit One · ${guestNumber} of ${guest_count}` : 'Admit One'}
-        </p>
-        <p className="text-xl font-semibold mb-3 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">{guestLabel}</p>
-        <div className="bg-white p-3 rounded-2xl inline-block shadow-[0_0_30px_rgba(212,175,55,0.25)]">
-          <QRCode value={checkInUrl} size={150} level="H" />
+      {/* Event */}
+      <div className="flex items-center gap-3 px-4 py-4">
+        {flyer && (
+          <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-muted border border-gold/20">
+            <Image src={flyer} alt={event.title || 'Event flyer'} fill className="object-cover" />
+          </div>
+        )}
+        <div className="min-w-0 text-left">
+          <h2 className="text-lg font-semibold leading-tight truncate">{event.title}</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {format(parseISO(event.event_date), 'EEE, MMM d')} · {club.name}
+          </p>
+          {cutoffTime && <p className="text-xs text-gold mt-1">Free entry before {formatTime(cutoffTime)}</p>}
         </div>
-        <p className="mt-2 font-mono text-xs tracking-[0.2em] text-gold/90">NO. {ticketNumber}</p>
       </div>
 
       <Perforation />
 
-      <div className="px-6 py-6 text-center space-y-4">
-        <h2 className="text-2xl font-semibold leading-tight">{event.title}</h2>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-center gap-2">
-            <Calendar className="w-4 h-4 text-gold shrink-0" />
-            <span>{format(parseISO(event.event_date), 'EEEE, MMMM d')}</span>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <MapPin className="w-4 h-4 text-gold shrink-0" />
-            <span>{club.name}</span>
-          </div>
-          {cutoffTime && (
-            <div className="flex items-center justify-center gap-2">
-              <Clock className="w-4 h-4 text-gold shrink-0" />
-              <span>Free entry before {formatTime(cutoffTime)}</span>
-            </div>
-          )}
+      {/* Stub: who it's for + QR */}
+      <div className="px-4 pt-4 pb-5 text-center">
+        <p className="text-[10px] text-gold uppercase tracking-[0.3em]">
+          {guest_count > 1 ? `Admit One · ${guestNumber} of ${guest_count}` : 'Admit One'}
+        </p>
+        <p className="text-xl font-semibold mt-1 mb-3">{guestLabel}</p>
+        <div className="bg-white p-3 rounded-xl inline-block">
+          <QRCode value={checkInUrl} size={168} level="H" />
         </div>
-
-        {celebration_type && guestNumber === 1 && (
-          <div className="bg-gold/10 border border-gold/20 rounded-xl px-4 py-3 flex items-center gap-3 text-left">
-            <Sparkles className="w-5 h-5 text-gold shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground">Celebrating</p>
-              <p className="text-sm font-medium">
-                {celebration_type === 'Other' ? celebration_other : celebration_type}
-              </p>
-            </div>
-          </div>
-        )}
+        <p className="mt-2.5 font-mono text-[11px] tracking-[0.25em] text-muted-foreground">NO. {ticketNumber}</p>
       </div>
     </div>
   )

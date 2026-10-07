@@ -105,9 +105,9 @@ export function AccessContent({ accessRequest }: Props) {
   }, [status])
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-background flex items-center justify-center px-4 py-6">
       <div className="w-full max-w-md">
-        <div className="mb-6">
+        <div className="mb-3">
           <Link href="/guestlist" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Guestlist
@@ -133,17 +133,11 @@ export function AccessContent({ accessRequest }: Props) {
           className="bg-card border border-border/50 rounded-2xl overflow-hidden"
         >
           {status === 'approved' && (
-            <div className="p-6 pb-4 text-center">
-              <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
-                <Check className="w-7 h-7 text-gold" />
-              </div>
-              <h1 className="text-xl font-semibold text-gold-gradient mb-1">Access Granted</h1>
-              <p className="text-sm text-muted-foreground mb-5">
-                {member?.first_name}, you&apos;re on the Xclusive Chicago guest list.{' '}
-                {guest_count > 1
-                  ? `Here ${guest_count === 2 ? 'are your 2 tickets' : `are your ${guest_count} tickets`} for the door, one per person.`
-                  : 'This is your ticket for the door.'}
-              </p>
+            <div className="p-4 pb-4 text-center">
+              <h1 className="flex items-center justify-center gap-2 text-lg font-semibold text-gold-gradient mb-3">
+                <Check className="w-5 h-5 text-gold" />
+                You&apos;re On The List
+              </h1>
               <div className="space-y-4">
                 {Array.from({ length: guest_count }, (_, i) => i + 1).map((guestNumber) => (
                   <TicketCard key={guestNumber} accessRequest={accessRequest} guestNumber={guestNumber} />

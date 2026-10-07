@@ -53,17 +53,11 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
 
   return (
     <div className="relative bg-card border border-gold/40 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(212,175,55,0.12)]">
-      {/* Flyer hero -- the event's own artwork, so the ticket reads as
-          belonging to this specific night, not a generic pass. */}
-      <div className="relative">
-        {flyer ? (
-          <div className="relative w-full aspect-[4/5] bg-muted">
-            <Image src={flyer} alt={event.title || 'Event flyer'} fill className="object-cover" priority />
-            <div className="absolute inset-0 bg-gradient-to-t from-card via-card/10 to-black/40" />
-          </div>
-        ) : (
-          <div className="h-24 bg-gradient-to-b from-gold/15 to-transparent" />
-        )}
+      {/* The flyer is the backdrop and the guest + QR sit on it, so the one
+          thing door staff need is on screen without scrolling. */}
+      <div className="relative w-full aspect-square bg-muted">
+        {flyer && <Image src={flyer} alt={event.title || 'Event flyer'} fill className="object-cover" priority />}
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 via-60% to-black/30" />
 
         <div className="absolute top-4 left-4 w-12 h-12 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)]">
           <Image src="/logo.png" alt="XCLUSIVE" fill className="object-contain" />
@@ -82,14 +76,21 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
         </div>
       </div>
 
-      {/* Event + guest */}
-      <div className="relative px-6 pt-3 pb-6 text-center space-y-4">
-        <div>
-          <p className="text-[11px] text-gold uppercase tracking-[0.25em] mb-1">
-            {guest_count > 1 ? `Admit One · ${guestNumber} of ${guest_count}` : 'Admit One'}
-          </p>
-          <h2 className="text-2xl font-semibold leading-tight">{event.title}</h2>
+      <div className="relative -mt-24 px-6 pb-6 text-center">
+        <p className="text-[11px] text-gold uppercase tracking-[0.25em] mb-0.5">
+          {guest_count > 1 ? `Admit One · ${guestNumber} of ${guest_count}` : 'Admit One'}
+        </p>
+        <p className="text-xl font-semibold mb-3 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">{guestLabel}</p>
+        <div className="bg-white p-3 rounded-2xl inline-block shadow-[0_0_30px_rgba(212,175,55,0.25)]">
+          <QRCode value={checkInUrl} size={150} level="H" />
         </div>
+        <p className="mt-2 font-mono text-xs tracking-[0.2em] text-gold/90">NO. {ticketNumber}</p>
+      </div>
+
+      <Perforation />
+
+      <div className="px-6 py-6 text-center space-y-4">
+        <h2 className="text-2xl font-semibold leading-tight">{event.title}</h2>
 
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-center gap-2">
@@ -107,23 +108,9 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
             </div>
           )}
         </div>
-      </div>
-
-      <Perforation />
-
-      {/* Stub: who it's for + QR */}
-      <div className="px-6 pt-6 pb-6 text-center">
-        <p className="text-[11px] text-muted-foreground uppercase tracking-[0.25em] mb-1">Guest</p>
-        <p className="text-xl font-semibold mb-5">{guestLabel}</p>
-
-        <div className="bg-white p-4 rounded-2xl inline-block mb-3 shadow-[0_0_30px_rgba(212,175,55,0.15)]">
-          <QRCode value={checkInUrl} size={170} level="H" />
-        </div>
-        <p className="text-sm text-muted-foreground">Show this to staff at the door</p>
-        <p className="mt-3 font-mono text-xs tracking-[0.2em] text-gold/80">NO. {ticketNumber}</p>
 
         {celebration_type && guestNumber === 1 && (
-          <div className="mt-5 bg-gold/10 border border-gold/20 rounded-xl px-4 py-3 flex items-center gap-3 text-left">
+          <div className="bg-gold/10 border border-gold/20 rounded-xl px-4 py-3 flex items-center gap-3 text-left">
             <Sparkles className="w-5 h-5 text-gold shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">Celebrating</p>

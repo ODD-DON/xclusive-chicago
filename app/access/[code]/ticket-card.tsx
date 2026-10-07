@@ -83,7 +83,7 @@ export function TicketCard({ accessRequest, guestNumber }: Props) {
       </div>
 
       {/* Event + guest */}
-      <div className="px-6 pb-6 -mt-2 text-center space-y-4">
+      <div className="relative px-6 pt-3 pb-6 text-center space-y-4">
         <div>
           <p className="text-[11px] text-gold uppercase tracking-[0.25em] mb-1">
             {guest_count > 1 ? `Admit One · ${guestNumber} of ${guest_count}` : 'Admit One'}
